@@ -5,7 +5,8 @@
         "roof_type":"flat",
         "width": 35,
         "depth": 40,
-        "sep_platting":false
+        "sep_platting":false,
+        "unit_separation":"party_wall"
     },
     "unit_info": [
         {

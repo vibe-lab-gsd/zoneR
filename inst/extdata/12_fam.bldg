@@ -6,7 +6,8 @@
         "width": 65,
         "depth": 76,
         "parking": 8,
-        "sep_platting":false
+        "sep_platting":false,
+        "unit_separation":"party_wall"
     },
     "unit_info": [
         {
