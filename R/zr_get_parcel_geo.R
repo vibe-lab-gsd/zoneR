@@ -7,13 +7,13 @@
 #'
 #' @examples
 zr_get_parcel_geo <- function(parcels_file){
-  if (class(parcels_file)[[1]] == "character"){ # then it is a file path
+  if (inherits(parcels_file, "character")){ # then it is a file path
     parcels_sf <- tryCatch({
       sf::st_read(parcels_file, quiet = TRUE)
     }, error = function(e) {
       stop("Unable to open file. Is it the proper geojson format? Does the file exist?")
     })
-  } else if (class(parcels_file)[[1]] == "sf"){ # then it is an sf object
+  } else if (inherits(parcels_file, "sf")){ # then it is an sf object
     parcels_sf <- parcels_file
   } else{ # it isn't going to work
     stop("improper input")
