@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/articles/special-files.html
 
 library(testthat)
-library(tidyzoning)
+library(zoneR)
 
-test_check("tidyzoning")
+test_check("zoneR")
