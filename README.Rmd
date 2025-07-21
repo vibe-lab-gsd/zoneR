@@ -63,3 +63,10 @@ devtools::install_github("vibe-lab-gsd/zoneR")
 ## Example
 
 This is a basic example which shows you how to solve a common problem:
+
+```{r}
+# zr_run_zoning_checks(bldg_file = "inst/extdata/2_fam.bldg",
+#                      parcels_file = "inst/extdata/Paradise.parcel",
+#                      zoning_file = "inst/extdata/Paradise.zoning")
+```
+
