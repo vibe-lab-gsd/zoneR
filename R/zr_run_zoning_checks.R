@@ -545,53 +545,53 @@ zr_run_zoning_checks <- function(bldg_file,
 
 }
 
-# ggplot(parcel_geo) +
-#   geom_sf() +
-#   # geom_sf(data = zoning_sf, aes(fill = dist_abbr), alpha = .7) +
-#   geom_sf(data = final_df, aes(color = allowed))
-#
-# zoning_sf[zoning_sf$dist_abbr == "R-2",]
-#
-# final_df[final_df$res_type == TRUE,]
-#
-# bldg_file <- "../personal_rpoj/tidyzoning2.0/tidybuildings/tiny_tests/tiny_test2.bldg"
-# parcels_file <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_parcels_to_test/Dallas.parcel"
-# zoning_file <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_to_test/Dallas.zoning"
-#
-# bldg_file <- "inst/extdata/2_fam.bldg"
-# parcels_file <- "inst/extdata/Paradise.parcel"
-# zoning_file <- "inst/extdata/Paradise.zoning"
-#
-# zr_run_zoning_checks(bldg_file,
-#                                  parcels_file,
-#                                  zoning_file,
-#                                  detailed_check = TRUE,
-#                                  print_checkpoints = TRUE,
-#                                  checks = c("res_type",
-#                                             "far",
-#                                             "fl_area",
-#                                             "fl_area_first",
-#                                             "fl_area_top",
-#                                             "footprint",
-#                                             "height",
-#                                             "height_eave",
-#                                             "lot_cov_bldg",
-#                                             "lot_area",
-#                                             "parking_enclosed",
-#                                             "stories",
-#                                             "unit_0bed",
-#                                             "unit_1bed",
-#                                             "unit_2bed",
-#                                             "unit_3bed",
-#                                             "unit_4bed",
-#                                             "unit_density",
-#                                             "unit_pct_0bed",
-#                                             "unit_pct_1bed",
-#                                             "unit_pct_2bed",
-#                                             "unit_pct_3bed",
-#                                             "unit_pct_4bed",
-#                                             "total_units",
-#                                             "unit_size_avg",
-#                                             "unit_size",
-#                                             "bldg_fit",
-#                                             "overlay"))
+ggplot(parcel_geo) +
+  geom_sf() +
+  # geom_sf(data = zoning_sf, aes(fill = dist_abbr), alpha = .7) +
+  geom_sf(data = final_df, aes(color = allowed))
+
+zoning_sf[zoning_sf$dist_abbr == "R-2",]
+
+final_df[final_df$res_type == TRUE,]
+
+bldg_file <- "../personal_rpoj/tidyzoning2.0/tidybuildings/tiny_tests/tiny_test2.bldg"
+parcels_file <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_parcels_to_test/Dallas.parcel"
+zoning_file <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_to_test/Dallas.zoning"
+
+bldg_file <- "inst/extdata/2_fam.bldg"
+parcels_file <- "inst/extdata/Paradise.parcel"
+zoning_file <- "inst/extdata/Paradise.zoning"
+
+zr_run_zoning_checks(bldg_file,
+                                 parcels_file,
+                                 zoning_file,
+                                 detailed_check = TRUE,
+                                 print_checkpoints = TRUE,
+                                 checks = c("res_type",
+                                            "far",
+                                            "fl_area",
+                                            "fl_area_first",
+                                            "fl_area_top",
+                                            "footprint",
+                                            "height",
+                                            "height_eave",
+                                            "lot_cov_bldg",
+                                            "lot_area",
+                                            "parking_enclosed",
+                                            "stories",
+                                            "unit_0bed",
+                                            "unit_1bed",
+                                            "unit_2bed",
+                                            "unit_3bed",
+                                            "unit_4bed",
+                                            "unit_density",
+                                            "unit_pct_0bed",
+                                            "unit_pct_1bed",
+                                            "unit_pct_2bed",
+                                            "unit_pct_3bed",
+                                            "unit_pct_4bed",
+                                            "total_units",
+                                            "unit_size_avg",
+                                            "unit_size",
+                                            "bldg_fit",
+                                            "overlay"))
