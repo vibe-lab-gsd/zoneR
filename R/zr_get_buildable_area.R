@@ -47,8 +47,17 @@ zr_get_buildable_area <- function(parcel_with_setbacks){
 
     # make the buffered sides all one polygon
     buffered_polygon <- sf::st_union(buffered_sides)
-    buildable_area <- sf::st_difference(sf::st_make_valid(polygon),sf::st_make_valid(buffered_polygon)) |>
-      list()
+    buildable_area <- sf::st_difference(sf::st_make_valid(polygon),sf::st_make_valid(buffered_polygon))
+
+    # if there happen to be more than one polygon created, then we
+    # assume that the polygon with the most points is the one that
+    # represents the buildable area the best
+    if (length(buildable_area) > 1){
+      longer_geometry_idx <- sapply(buildable_area, length) |> which.max()
+      buildable_area <- buildable_area[longer_geometry_idx]
+    }
+
+    buildable_area <- list(buildable_area)
 
 
   } else{ #multiple setback possibilities
@@ -61,6 +70,14 @@ zr_get_buildable_area <- function(parcel_with_setbacks){
     buffered_polygon_relaxed <- sf::st_union(buffered_sides_relaxed)
     buildable_area_relaxed <- sf::st_difference(sf::st_make_valid(polygon),sf::st_make_valid(buffered_polygon_relaxed))
 
+    # if there happen to be more than one polygon created, then we
+    # assume that the polygon with the most points is the one that
+    # represents the buildable area the best
+    if (length(buildable_area_relaxed) > 1){
+      longer_geometry_idx <- sapply(buildable_area_relaxed, length) |> which.max()
+      buildable_area_relaxed <- buildable_area_relaxed[longer_geometry_idx]
+    }
+
     # put a buffer on each side (need to convert to meters)
     buffered_sides_strict <- parcel_with_setbacks |>
       dplyr::mutate(geometry = sf::st_buffer(geometry,max_setback))
@@ -69,6 +86,14 @@ zr_get_buildable_area <- function(parcel_with_setbacks){
     buffered_polygon_strict <- sf::st_union(buffered_sides_strict)
     buildable_area_strict <- sf::st_difference(sf::st_make_valid(polygon),sf::st_make_valid(buffered_polygon_strict))
 
+    # if there happen to be more than one polygon created, then we
+    # assume that the polygon with the most points is the one that
+    # represents the buildable area the best
+    if (length(buildable_area_strict) > 1){
+      longer_geometry_idx <- sapply(buildable_area_strict, length) |> which.max()
+      buildable_area_strict <- buildable_area_strict[longer_geometry_idx]
+    }
+
     buildable_area <- list(buildable_area_strict, buildable_area_relaxed)
 
   }
@@ -76,3 +101,21 @@ zr_get_buildable_area <- function(parcel_with_setbacks){
   return(buildable_area)
 
 }
+#
+#
+# show_shapes <- function(shape1, shape2 = NULL, shape3 = NULL){
+#   if (is.null(shape2) & is.null(shape3)){
+#     plot <- ggplot(shape1) +
+#       geom_sf(color = "red3", fill = "red", alpha = .5)
+#   } else if (is.null(shape3)){
+#     plot <- ggplot(shape1) +
+#       geom_sf(color = "red3", fill = "red", alpha = .5) +
+#       geom_sf(data = shape2 ,color = "blue3", fill = "blue", alpha = .5)
+#   } else{
+#     plot <- ggplot(shape1) +
+#       geom_sf(color = "red3", fill = "red", alpha = .5) +
+#       geom_sf(data = shape2 ,color = "blue3", fill = "blue", alpha = .5) +
+#       geom_sf(data = shape2 ,color = "green3", fill = "green", alpha = .5)
+#   }
+#   return(plot)
+# }
