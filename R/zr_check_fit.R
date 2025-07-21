@@ -25,7 +25,7 @@ zr_check_fit <- function(bldg_data, buildable_area, crs = 3081){
     return(FALSE)
   }
 
-  if (st_area(buildable_area) < footprint){
+  if (sf::st_area(buildable_area) < footprint){
     return(FALSE)
   }
 
