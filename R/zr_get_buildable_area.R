@@ -11,7 +11,14 @@
 #' Returns a polygon representing the buildable area of the parcel.
 #' @export
 #'
-zr_get_buildable_area <- function(parcel_with_setbacks){
+zr_get_buildable_area <- function(parcel_with_setbacks, crs = NULL){
+
+  if (is.null(crs)){
+    crs <- zr_get_crs(parcel_with_setbacks)
+  }
+
+  parcel_with_setbacks <- sf::st_transform(parcel_with_setbacks, crs)
+
   # make tidyparcel a polygon
   polygon <- parcel_with_setbacks |>
     sf::st_union() |>
