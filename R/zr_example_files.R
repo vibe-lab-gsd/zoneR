@@ -4,7 +4,8 @@
 #' returns either a list of names of the example files, or the file path
 #' of a specified file.
 #'
-#' @param file If known, the name of the example file.
+#' @param file The name of the example file. If NULL, then a list
+#' of names of example files will be returned
 #'
 #' @returns Either a list of names of the example files, or a path
 #' to the specified file
