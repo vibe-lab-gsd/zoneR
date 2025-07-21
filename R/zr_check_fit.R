@@ -12,6 +12,8 @@
 zr_check_fit <- function(bldg_data, buildable_area, crs = 3081){
   width <- bldg_data$bldg_info$width * 0.3048
   depth <- bldg_data$bldg_info$depth * 0.3048
+  footprint <- width * depth
+  units(footprint) <- "m^2"
 
   rot_degrees <- seq(0,75, 15)
   # do the process and then rotate the footprint if it doesn't work
@@ -20,6 +22,10 @@ zr_check_fit <- function(bldg_data, buildable_area, crs = 3081){
   buildable_area <- sf::st_transform(buildable_area, crs)
 
   if (length(buildable_area) < 1){
+    return(FALSE)
+  }
+
+  if (st_area(buildable_area) < footprint){
     return(FALSE)
   }
 
