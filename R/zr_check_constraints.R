@@ -66,9 +66,11 @@ zr_check_constraints <- function(vars,
       next
     }
 
-    min_requirement <- ifelse(is.na(constraint_df$min_value),0,constraint_df$min_value[[1]])
-    max_requirement <- ifelse(is.na(constraint_df$max_value),100000,constraint_df$max_value[[1]])
+    min_req <- ifelse(is.na(constraint_df$min_value),0,constraint_df$min_value)
+    max_req <- ifelse(is.na(constraint_df$max_value),100000,constraint_df$max_value)
 
+    min_requirement <- min_req[[1]]
+    max_requirement <- max_req[[1]]
     # this tests for the usual case when each min and max requirements have one value
     if (length(min_requirement) & length(max_requirement) == 1){
       filtered_req[i,"allowed"] <- value >= min_requirement & value <= max_requirement
@@ -143,11 +145,11 @@ zr_check_constraints <- function(vars,
       next
     } else{
       explanation <- c()
-      if (!is.na(zoning_req[zoning_req$constraint_name == constraint, "min_val_note"][[1]])){
-        explanation <- c(explanation,zoning_req[zoning_req$constraint_name == constraint,"min_val_note"][[1]])
+      if (!is.na(zoning_req[zoning_req$constraint_name == constraint, "min_val_error"][[1]])){
+        explanation <- c(explanation,zoning_req[zoning_req$constraint_name == constraint,"min_val_error"][[1]])
       }
-      if (!is.na(zoning_req[zoning_req$constraint_name == constraint, "max_val_note"][[1]])){
-        explanation <- c(explanation,zoning_req[zoning_req$constraint_name == constraint,"max_val_note"][[1]])
+      if (!is.na(zoning_req[zoning_req$constraint_name == constraint, "max_val_error"][[1]])){
+        explanation <- c(explanation,zoning_req[zoning_req$constraint_name == constraint,"max_val_error"][[1]])
       }
 
       if (length(explanation) > 0){
