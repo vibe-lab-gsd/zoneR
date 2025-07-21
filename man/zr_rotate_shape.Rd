@@ -12,7 +12,7 @@ zr_rotate_shape(shape, angle_degrees, center = NULL)
 \item{angle_degrees}{The angle (in degrees) that you want to rotate the shape}
 
 \item{center}{The center about which to rotate in the form of XY coordinates.
-Default is null,  When NULL, rotation is about the centroid.}
+Default is NULL,  When NULL, rotation is about the centroid.}
 }
 \value{
 Returns the simple feature shape object with rotated geometry
