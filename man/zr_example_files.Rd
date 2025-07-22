@@ -7,7 +7,8 @@
 zr_example_files(file = NULL)
 }
 \arguments{
-\item{file}{If known, the name of the example file.}
+\item{file}{The name of the example file. If NULL, then a list
+of names of example files will be returned}
 }
 \value{
 Either a list of names of the example files, or a path
