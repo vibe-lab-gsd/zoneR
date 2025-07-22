@@ -110,21 +110,3 @@ zr_get_buildable_area <- function(parcel_with_setbacks, crs = NULL){
   return(buildable_area)
 
 }
-#
-#
-# show_shapes <- function(shape1, shape2 = NULL, shape3 = NULL){
-#   if (is.null(shape2) & is.null(shape3)){
-#     plot <- ggplot(shape1) +
-#       geom_sf(color = "red3", fill = "red", alpha = .5)
-#   } else if (is.null(shape3)){
-#     plot <- ggplot(shape1) +
-#       geom_sf(color = "red3", fill = "red", alpha = .5) +
-#       geom_sf(data = shape2 ,color = "blue3", fill = "blue", alpha = .5)
-#   } else{
-#     plot <- ggplot(shape1) +
-#       geom_sf(color = "red3", fill = "red", alpha = .5) +
-#       geom_sf(data = shape2 ,color = "blue3", fill = "blue", alpha = .5) +
-#       geom_sf(data = shape2 ,color = "green3", fill = "green", alpha = .5)
-#   }
-#   return(plot)
-# }
