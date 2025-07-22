@@ -24,12 +24,224 @@ Specification (OZFS) data.
 The main function of zoneR is `zr_run_zoning_checks()` which reads in an
 OZFS `.bldg`, `.parcel`, and `.zoning` file. It calculates the zoning
 requirements for each parcel, checks them against the building
-characteristics, and returns a data frame stating if the building is
-allowed on the parcel.
+characteristics, and returns a data frame with a row for each parcel and
+an "allowed" column containing one of three possible values.
 
-Inside the `zr_run_zoning_checks()` function, different variables are
-made from the OZFS files and used in other functions to perform the
-checks. Some of the main variables are listed below.
+- `TRUE`: The building is allowed on the parcel
+
+- `FALSE`: The building is not allowed on the parcel
+
+- `MAYBE`: The building might be allowed in the parcel depending on 
+conditions that are not yet possible to express in OZFS. 
+
+## Installation
+
+You can install the development version of zoneR from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("vibe-lab-gsd/zoneR")
+```
+
+## Example
+
+This is a basic example of finding which parcels in Paradise, TX allow a duplex 
+with a gross floor area of 3200 square feet and a height of 45 feet. 
+Small OZFS files accessible through the package will be used in the example. 
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+library(ggplot2)
+```
+
+We get the file paths for the example OZFS files using `zr_example_files()`.
+```{r}
+library(zoneR)
+
+bldg_path <- zr_example_files("2_fam.bldg")
+parcel_path <- zr_example_files("Paradise.parcel")
+zoning_path <- zr_example_files("Paradise.zoning")
+```
+
+We can then put each of the files into the `zr_run_zoning_checks()` function and 
+assign the result to a variable called zoning_checks. 
+```{r}
+zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
+                                      parcels_file = parcel_path,
+                                      zoning_file = zoning_path)
+```
+
+The result of the function is a simple features data frame with the following columns: "parcel_id", "allowed", "reason", "geometry." Note that the geometry is the centroid of the parcel. 
+```{r}
+head(zoning_checks)
+```
+
+The graph below is a visualization of the results. 
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=12, fig.height=8}
+parcels <- sf::st_read(parcel_path, quiet = T)
+
+parcels <- parcels |>
+  dplyr::filter(side != "centroid")  |>
+  dplyr::group_by(parcel_id) |>
+  dplyr::summarize(geometry = sf::st_polygonize(sf::st_union(geometry)))
+
+parcel_polygons <- dplyr::left_join(parcels, sf::st_drop_geometry(zoning_checks), by = "parcel_id")
+
+parcel_polygons |>
+  ggplot() +
+  geom_sf(aes(fill = allowed)) +
+  scale_fill_manual(values = c("FALSE" = "#f4a582",
+                               "MAYBE" = "#f7f7f7",
+                               "TRUE" = "#92c5de"),
+                    na.value = "grey70") +
+  theme_void()
+```
+
+It appears this duplex would not be allowed in most the Paradise parcels.
+To look further into the reasons, we can specify the checks we want to be run
+and look at those results. Since land use regulations are often a distinguishing
+factor in allowing a building on a parcel, only the res_type check will be run
+in this next example. We will also put `print_checkpoints = FALSE` because we
+don't really need it to tell us when it is done with the different parts of the
+function. 
+
+```{r}
+zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
+                                      parcels_file = parcel_path,
+                                      zoning_file = zoning_path, 
+                                      checks = "res_type",
+                                      print_checkpoints = FALSE)
+```
+
+Now we can see that only a few of the parcels are in a district that allows
+buildings with two units. It makes sense why there were only a few parcels 
+in the previous check that might have allowed the building. 
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=12, fig.height=8}
+parcels <- sf::st_read(parcel_path, quiet = T)
+
+parcels <- parcels |>
+  dplyr::filter(side != "centroid")  |>
+  dplyr::group_by(parcel_id) |>
+  dplyr::summarize(geometry = sf::st_polygonize(sf::st_union(geometry)))
+
+parcel_polygons <- dplyr::left_join(parcels, sf::st_drop_geometry(zoning_checks), by = "parcel_id")
+
+parcel_polygons |>
+  ggplot() +
+  geom_sf(aes(fill = allowed)) +
+  scale_fill_manual(values = c("FALSE" = "#f4a582",
+                               "MAYBE" = "#f7f7f7",
+                               "TRUE" = "#92c5de"),
+                    na.value = "grey70") +
+  theme_void()
+```
+
+Here are a few other constraint checks to visualize. 
+
+Height Check
+```{r}
+zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
+                                      parcels_file = parcel_path,
+                                      zoning_file = zoning_path, 
+                                      checks = "height",
+                                      print_checkpoints = FALSE)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=12, fig.height=8}
+parcels <- sf::st_read(parcel_path, quiet = T)
+
+parcels <- parcels |>
+  dplyr::filter(side != "centroid")  |>
+  dplyr::group_by(parcel_id) |>
+  dplyr::summarize(geometry = sf::st_polygonize(sf::st_union(geometry)))
+
+parcel_polygons <- dplyr::left_join(parcels, sf::st_drop_geometry(zoning_checks), by = "parcel_id")
+
+parcel_polygons |>
+  ggplot() +
+  geom_sf(aes(fill = allowed)) +
+  scale_fill_manual(values = c("FALSE" = "#f4a582",
+                               "MAYBE" = "#f7f7f7",
+                               "TRUE" = "#92c5de"),
+                    na.value = "grey70") +
+  theme_void()
+```
+
+Building Fit Check
+```{r}
+zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
+                                      parcels_file = parcel_path,
+                                      zoning_file = zoning_path, 
+                                      checks = "bldg_fit",
+                                      print_checkpoints = FALSE)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=12, fig.height=8}
+parcels <- sf::st_read(parcel_path, quiet = T)
+
+parcels <- parcels |>
+  dplyr::filter(side != "centroid")  |>
+  dplyr::group_by(parcel_id) |>
+  dplyr::summarize(geometry = sf::st_polygonize(sf::st_union(geometry)))
+
+parcel_polygons <- dplyr::left_join(parcels, sf::st_drop_geometry(zoning_checks), by = "parcel_id")
+
+parcel_polygons |>
+  ggplot() +
+  geom_sf(aes(fill = allowed)) +
+  scale_fill_manual(values = c("FALSE" = "#f4a582",
+                               "MAYBE" = "#f7f7f7",
+                               "TRUE" = "#92c5de"),
+                    na.value = "grey70") +
+  theme_void()
+```
+
+Many of the "MAYBE" values attached to the bldg_fit constraint represent parcels that didn't 
+have labeled sides. Without labeled sides, a proper buildable area could not be calculated,
+and the building fit check was skipped. 
+
+#### Detailed Check
+
+In addition to the usual data frame that is returned, setting `detailed_check = TRUE` 
+returns the data frame with additional columns for every check that took place 
+(Note this requires more processing time as the code does not skip 
+consecutive checks if a previous check yields FALSE).
+
+
+```{r}
+zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
+                                      parcels_file = parcel_path,
+                                      zoning_file = zoning_path,
+                                      detailed_check = TRUE)
+```
+
+With these added columns, we can look more closely at why the building does not fit in
+most of the parcels.
+
+```{r, results='hide'}
+column_true_sums <- colSums(sf::st_drop_geometry(zoning_checks) == "TRUE", na.rm = TRUE)
+
+ordered_sums <- column_true_sums[order(column_true_sums)]
+```
+
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+sums_df <- data.frame(constraint_check = names(ordered_sums), parcels_true = ordered_sums) |>
+  dplyr::filter(!constraint_check %in% c("parcel_id","allowed","reason"))
+
+row.names(sums_df) <- seq(nrow(sums_df))
+
+knitr::kable(sums_df)
+```
+
+
+It appears the res_type constraint is the most restrictive and the unit_size 
+constraint is the least restrictive for the given building. 
+
+## Inside the zr_run_zoning_checks()
+Most of the functions in zoneR were created for `zr_run_zoning_checks()`, but
+they can be use by themselves if desired. Below are some of the main variables that 
+the different zoneR functions take in.
 
 -   **bldg_data:** The `.bldg` file read in as a list using
     `rjson::fromJSON()`
@@ -50,23 +262,3 @@ checks. Some of the main variables are listed below.
 
 -   **district_data:** One row of the zoning_data data frame
     representing a unique district.
-
-## Installation
-
-You can install the development version of zoneR from [GitHub](https://github.com/) with:
-
-``` r
-# install.packages("devtools")
-devtools::install_github("vibe-lab-gsd/zoneR")
-```
-
-## Example
-
-This is a basic example which shows you how to solve a common problem:
-
-```{r}
-# zr_run_zoning_checks(bldg_file = "inst/extdata/2_fam.bldg",
-#                      parcels_file = "inst/extdata/Paradise.parcel",
-#                      zoning_file = "inst/extdata/Paradise.zoning")
-```
-
