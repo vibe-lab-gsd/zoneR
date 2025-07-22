@@ -6,6 +6,8 @@
 #' @param parcel_with_setbacks A parcel_geo object that has setback
 #' information added. parcel_with_setbacks is the output of the
 #' [zr_add_setbacks()] function.
+#' @param crs The projected Coordinate Reference System for the study area.
+#' Must be in meters. If NULL, crs is calculated using `zr_get_crs()`.
 #'
 #' @return
 #' Returns a polygon representing the buildable area of the parcel.

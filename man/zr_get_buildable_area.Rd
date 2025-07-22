@@ -4,12 +4,15 @@
 \alias{zr_get_buildable_area}
 \title{Create a parcel's buildable area}
 \usage{
-zr_get_buildable_area(parcel_with_setbacks)
+zr_get_buildable_area(parcel_with_setbacks, crs = NULL)
 }
 \arguments{
 \item{parcel_with_setbacks}{A parcel_geo object that has setback
 information added. parcel_with_setbacks is the output of the
 \code{\link[=zr_add_setbacks]{zr_add_setbacks()}} function.}
+
+\item{crs}{The projected Coordinate Reference System for the study area.
+Must be in meters. If NULL, crs is calculated using \code{zr_get_crs()}.}
 }
 \value{
 Returns a polygon representing the buildable area of the parcel.
