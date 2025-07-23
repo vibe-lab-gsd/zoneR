@@ -123,7 +123,7 @@ zr_run_zoning_checks <- function(bldg_file,
 
     parcel_df <- parcel_df |>
       dplyr::mutate(check_pd = ifelse(parcel_id %in% pd_parcels, FALSE, TRUE),
-                    false_reasons = ifelse(parcel_id %in% pd_parcels, ifelse(!is.na(false_reasons),paste(false_reasons, "in planned development district", sep = ", "),"in planned development district"), false_reasons))
+                    false_reasons = ifelse(parcel_id %in% pd_parcels, ifelse(!is.na(false_reasons),paste(false_reasons, "PD_dist", sep = ", "),"PD_dist"), false_reasons))
 
     # if detailed_check == FALSE, then we store the FALSE parcels in a list to be combined later
     # we filter the parcel_df to have just the TRUEs and MAYBEs
@@ -145,7 +145,7 @@ zr_run_zoning_checks <- function(bldg_file,
       cat(ifelse(time_lapsed > 60,
                  paste0("___planned_dev_check___(",round(time_lapsed / 60,2), " min)\n"),
                  paste0("___planned_dev_check___(",round(time_lapsed,1), " sec)\n")))
-      cat(paste(length(parcel_df$zoning_id[parcel_df$check_pd == TRUE]),"parcels in planned developement districts\n\n"))
+      cat(paste(length(parcel_df$zoning_id[parcel_df$check_pd == TRUE]),"parcels in planned developement district\n\n"))
     }
 
   }
@@ -292,6 +292,10 @@ zr_run_zoning_checks <- function(bldg_file,
                paste0("___initial_checks___(",round(time_lapsed,1), " sec)\n")))
     cat(paste(length(true_maybe_list),"parcels are TRUE or MAYBE\n\n"))
   }
+
+  ###### IN PROGRESS
+  zoning_req_empty <- sapply(zoning_req_list, function(x) inherits(x,"character"))
+############# IN PROGRESS
 
   # SIDE LABEL CHECK
   # if parcels have labeled sides, we can move on to the footprint check
@@ -536,10 +540,14 @@ zr_run_zoning_checks <- function(bldg_file,
 
 }
 
-#
-# bldg_file <- "../personal_rpoj/tidyzoning2.0/tidybuildings/tiny_tests/tiny_test2.bldg"
-# parcels_file <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/test_parcels/Addison.parcel"
-# zoning_file <-  "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/ozfs_edited/Addison.zoning"
-# detailed_check <- TRUE
-# print_checkpoints <- TRUE
-# checks <- possible_checks
+final_df |>
+  ggplot() +
+  geom_sf(aes(color = check_pd))
+
+
+bldg_file <- "../personal_rpoj/tidyzoning2.0/tidybuildings/tiny_tests/tiny_test2.bldg"
+parcels_file <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/test_parcels/Addison.parcel"
+zoning_file <-  "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/ozfs_edited/Addison.zoning"
+detailed_check <- TRUE
+print_checkpoints <- TRUE
+checks <- possible_checks
