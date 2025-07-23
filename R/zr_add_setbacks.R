@@ -29,8 +29,16 @@ zr_add_setbacks <- function(parcel_geo, district_data, zoning_req){
 
   # loop through each side
   setback_value <- list()
+  warning_vec <- NULL
   for (i in 1:nrow(parcel_geo)){
     side_type <- parcel_geo[[i,"side"]]
+
+    if (!side_type %in% names(name_key)){
+      setback_value[i] <- NA
+      warning_vec <- 1
+      next
+    }
+
     filtered_constraints <- zoning_req |>
       dplyr::filter(constraint_name == name_key[[side_type]])
 
@@ -41,8 +49,11 @@ zr_add_setbacks <- function(parcel_geo, district_data, zoning_req){
     }
   }
 
-  parcel_geo$setback <- I(setback_value)
+  if (!is.null(warning_vec)){
+    warning("No side label. Setbacks not considered.")
+  }
 
+  parcel_geo$setback <- I(setback_value)
 
   ## EVERYTHING BELOW HAS BEEN ADDED TO ACCOMODATE EXTRA SETBACK RULES ##
 
