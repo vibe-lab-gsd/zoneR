@@ -12,9 +12,10 @@
 #' @param print_checkpoints When TRUE, runtimes and other info will be
 #' printed at certain points throughout the function.
 #' @param checks A list of all the checks that should take place. The default is
-#' every check possible. Note, if a zoning file doesn't have zoning info for one
-#' of the constraints listed in the checks variable, then it is assumed that
-#' building characteristic is allowed.
+#' to check for every constraint possible in the OZFS. These constraints can found
+#' in the package data `possible_checks`. Note, if a zoning file doesn't have zoning
+#' info for one of the constraints listed in the checks variable, then it is
+#' assumed that building characteristic is allowed.
 #'
 #' @returns a simple features data frame with the centroid of each parcel with a column
 #' stating building allowance on the parcel and a column stating the reason
@@ -27,37 +28,16 @@ zr_run_zoning_checks <- function(bldg_file,
                                  zoning_file,
                                  detailed_check = FALSE,
                                  print_checkpoints = TRUE,
-                                 checks = c("res_type",
-                                            "far",
-                                            "fl_area",
-                                            "fl_area_first",
-                                            "fl_area_top",
-                                            "footprint",
-                                            "height",
-                                            "height_eave",
-                                            "lot_cov_bldg",
-                                            "lot_area",
-                                            "parking_enclosed",
-                                            "stories",
-                                            "unit_0bed",
-                                            "unit_1bed",
-                                            "unit_2bed",
-                                            "unit_3bed",
-                                            "unit_4bed",
-                                            "unit_density",
-                                            "unit_pct_0bed",
-                                            "unit_pct_1bed",
-                                            "unit_pct_2bed",
-                                            "unit_pct_3bed",
-                                            "unit_pct_4bed",
-                                            "total_units",
-                                            "unit_size_avg",
-                                            "unit_size",
-                                            "bldg_fit",
-                                            "overlay")){
+                                 checks = possible_checks){
 
   # track the start time to give a time stamp at end
   total_start_time <- proc.time()[[3]]
+
+  incorrect_checks <- checks[!checks %in% possible_checks]
+
+  if (length(incorrect_checks) > 0){
+    warning(paste("Unknown constraints assigned to check input:",paste(incorrect_checks, collapse =", ")))
+  }
 
   initial_checks <- checks[!checks %in% c("res_type",
                                        "unit_size",
@@ -253,6 +233,9 @@ zr_run_zoning_checks <- function(bldg_file,
     # get a vector of each value in the combined_checks df
     value_vec <- as.character(unlist(combined_checks[1, ]))
 
+    maybe_constraints <- names(combined_checks)[value_vec == "MAYBE"]
+    false_constraints <- names(combined_checks)[value_vec == "FALSE"]
+
     # assign an overall value for the check
     if (FALSE %in% value_vec){
       check <- FALSE
@@ -268,12 +251,12 @@ zr_run_zoning_checks <- function(bldg_file,
 
     # if the check returns FALSE or MAYBE,
     # then write the function name in the reasons column
-    if (check == "MAYBE"){
-      parcel_df[i,"maybe_reasons"] <- ifelse(is.na(parcel_df[[i,"maybe_reasons"]]), "initial_checks", paste(parcel_df[[i,"maybe_reasons"]], "initial_checks", sep = ", "))
+    if (length(maybe_constraints) > 0){
+      parcel_df[i,"maybe_reasons"] <- ifelse(is.na(parcel_df[[i,"maybe_reasons"]]), paste(maybe_constraints, collapse = ", "), paste(parcel_df[[i,"maybe_reasons"]], paste(maybe_constraints, collapse = ", "), sep = ", "))
     }
 
-    if (check == FALSE){
-      parcel_df[i,"false_reasons"] <- ifelse(is.na(parcel_df[[i,"false_reasons"]]), "initial_checks", paste(parcel_df[[i,"false_reasons"]], "initial_checks", sep = ", "))
+    if (length(false_constraints) > 0){
+      parcel_df[i,"false_reasons"] <- ifelse(is.na(parcel_df[[i,"false_reasons"]]), paste(false_constraints, collapse = ", "), paste(parcel_df[[i,"false_reasons"]], paste(false_constraints, collapse = ", "), sep = ", "))
     }
 
 
@@ -317,7 +300,7 @@ zr_run_zoning_checks <- function(bldg_file,
 
     parcel_df <- parcel_df |>
       dplyr::mutate(parcel_side_lbl = ifelse(parcel_id %in% parcels_with_sides,TRUE, "MAYBE"),
-                    maybe_reasons = ifelse(parcel_id %in% parcels_with_sides, maybe_reasons, ifelse(!is.na(maybe_reasons),paste(maybe_reasons, "no side labels", sep = ", "),"no side labels")))
+                    maybe_reasons = ifelse(parcel_id %in% parcels_with_sides, maybe_reasons, ifelse(!is.na(maybe_reasons),paste(maybe_reasons, "side_lbl", sep = ", "),"side_lbl")))
 
     parcel_no_sides <- parcel_df |>
       dplyr::filter(!parcel_id %in% parcels_with_sides)
@@ -346,7 +329,7 @@ zr_run_zoning_checks <- function(bldg_file,
       if (vars$lot_cov_bldg <= 100){
         parcel_sides <- parcel_geo |>
           dplyr::filter(parcel_id == parcel_data$parcel_id)
-        parcel_with_setbacks <- zr_add_setbacks(parcel_sides, zoning_req = zoning_req)
+        parcel_with_setbacks <- zr_add_setbacks(parcel_sides, district_data, zoning_req)
         buildable_area <- zr_get_buildable_area(parcel_with_setbacks, crs)
 
         # if two buildable areas were recorded, we need to test for both
@@ -446,8 +429,8 @@ zr_run_zoning_checks <- function(bldg_file,
   final_df <- final_df |>
     dplyr::mutate(allowed = ifelse(has_false > 0, FALSE, ifelse(has_maybe > 0, "MAYBE",TRUE)),
                   reason = ifelse(!is.na(maybe_reasons) | !is.na(false_reasons),
-                                  paste("FALSE encountered:", false_reasons, "- MAYBE encountered:", maybe_reasons),
-                                  "The building is allowed in the parcel")) |>
+                                  paste("FALSE:", false_reasons, "- MAYBE:", maybe_reasons),
+                                  "Building allowed")) |>
     dplyr::select(!c("has_false","has_maybe"))
 
   # select only the columns needed depending on whether detailed check is TRUE or FALSE
@@ -538,9 +521,11 @@ zr_run_zoning_checks <- function(bldg_file,
     cat("_____summary_____\n")
     cat(paste0("total runtime: ", round(total_time,1), " sec (",round(total_time / 60,2)," min)\n"))
     cat(paste(length(which(final_df$allowed == TRUE)), "/", nrow(final_df), "parcels allow the building\n"))
-    cat(paste(length(which(final_df$allowed == "MAYBE")), "/", nrow(final_df), "parcels might allow the building\n\n\n"))
+    if (length(which(final_df$allowed == "MAYBE")) > 0){
+      cat(paste(length(which(final_df$allowed == "MAYBE")), "/", nrow(final_df), "parcels might allow the building\n\n\n"))
+    }
   } else{
-    cat("run finished\n")
+    cat("zoning checks finished\n")
     cat(cat(paste0("total runtime: ", round(total_time,1), " sec (",round(total_time / 60,2)," min)\n\n\n")))
   }
 
@@ -550,3 +535,11 @@ zr_run_zoning_checks <- function(bldg_file,
   return(final_df)
 
 }
+
+#
+# bldg_file <- "../personal_rpoj/tidyzoning2.0/tidybuildings/tiny_tests/tiny_test2.bldg"
+# parcels_file <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/test_parcels/Addison.parcel"
+# zoning_file <-  "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/ozfs_edited/Addison.zoning"
+# detailed_check <- TRUE
+# print_checkpoints <- TRUE
+# checks <- possible_checks
