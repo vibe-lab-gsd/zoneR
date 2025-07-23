@@ -13,7 +13,6 @@ Simple feature collection with 121 features and 4 fields
 \item{ZONE}{Zone Abbreviation}
 \item{ZONENAME}{Zone Name}
 \item{EPSG_NAD83}{Projected CRS EPSG Code}
-\item{geometry}{Zone Geometry}
 
 }
 }
