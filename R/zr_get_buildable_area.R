@@ -35,7 +35,7 @@ zr_get_buildable_area <- function(parcel_with_setbacks, crs = NULL){
   parcel_with_setbacks$min_setback <- unlist(lapply(parcel_with_setbacks$setback, min))
   parcel_with_setbacks$max_setback <- unlist(lapply(parcel_with_setbacks$setback, max))
 
-  if (sum(parcel_with_setbacks$min_setback) == 0 & sum(parcel_with_setbacks$max_setback) == 0){
+  if (sum(parcel_with_setbacks$min_setback, na.rm = TRUE) == 0 & sum(parcel_with_setbacks$max_setback, na.rm = TRUE) == 0){
     return(list(polygon))
   }
 
