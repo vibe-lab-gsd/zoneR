@@ -539,15 +539,15 @@ zr_run_zoning_checks <- function(bldg_file,
   return(final_df)
 
 }
-
-final_df |>
-  ggplot() +
-  geom_sf(aes(color = check_pd))
-
-
-bldg_file <- "../personal_rpoj/tidyzoning2.0/tidybuildings/tiny_tests/tiny_test2.bldg"
-parcels_file <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/test_parcels/Addison.parcel"
-zoning_file <-  "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/ozfs_edited/Addison.zoning"
-detailed_check <- TRUE
-print_checkpoints <- TRUE
-checks <- possible_checks
+#
+# final_df |>
+#   ggplot() +
+#   geom_sf(aes(color = check_pd))
+#
+#
+# bldg_file <- "../personal_rpoj/tidyzoning2.0/tidybuildings/tiny_tests/tiny_test2.bldg"
+# parcels_file <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/test_parcels/Addison.parcel"
+# zoning_file <-  "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/ozfs_edited/Addison.zoning"
+# detailed_check <- TRUE
+# print_checkpoints <- TRUE
+# checks <- possible_checks
