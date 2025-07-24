@@ -3,11 +3,11 @@
 #' `zr_run_zoning_checks()` checks the building information against all the
 #' zoning constraints to see which parcels will allow the building.
 #'
-#' @param bldg_file The path to the OZFS *.bldg file
-#' @param parcels_file The path to the OZFS *.parcel file
-#' @param zoning_file The path to the OZFS *.zoning
+#' @param bldg_file The path to the OZFS *.bldg
+#' @param parcel_files The path, or list of paths, to the OZFS *.parcel file or files
+#' @param zoning_files The path, or list of paths, to the OZFS *.zoning file or files
 #' @param detailed_check When TRUE, every parcel passes through each
-#' check no matter the result, and it take more time. When FALSE,
+#' check no matter the result, and it takes more time. When FALSE,
 #' subsequent checks are skipped as soon as one check reads FALSE
 #' @param print_checkpoints When TRUE, runtimes and other info will be
 #' printed at certain points throughout the function.
@@ -17,15 +17,14 @@
 #' info for one of the constraints listed in the checks variable, then it is
 #' assumed that building characteristic is allowed.
 #'
-#' @returns a simple features data frame with the centroid of each parcel with a column
-#' stating building allowance on the parcel and a column stating the reason
-#' why certain parcels don't allow the building.
+#' @returns A simple features data frame with geometry for the centroid of each
+#' parcel and columns to show info on allowance of the building.
 #' @export
 #'
 #' @examples
 zr_run_zoning_checks <- function(bldg_file,
-                                 parcels_file,
-                                 zoning_file,
+                                 parcel_files,
+                                 zoning_files,
                                  detailed_check = FALSE,
                                  print_checkpoints = TRUE,
                                  checks = possible_checks){
@@ -50,37 +49,78 @@ zr_run_zoning_checks <- function(bldg_file,
 
   ## zoning data ##
   # get the full ozfs data as an sf data frame
-  zoning_all_sf <- sf::st_read(zoning_file, quiet = TRUE)
+  zoning_data_list <- list()
+  zoning_sf_list <- list()
+  for (zoning_files_num in 1:length(zoning_files)){
+    file <- zoning_files[[zoning_files_num]]
+    zone_sf <- sf::st_read(file, quiet = TRUE) |>
+      dplyr::filter(!sf::st_is_empty(geometry)) |>
+      dplyr::mutate(muni_id = zoning_files_num)
+
+    zone_sf$res_types_allowed <- zone_sf$res_types_allowed |> as.list()
+
+    zoning_sf_list[[zoning_files_num]] <- zone_sf
+
+    # zoning_data is the json list form of the zoning file
+    # we will match the zoning_data_list idx with the zoning$muni_id column when we are
+    # looping through zr_get_variables()
+    zoning_data_list[[zoning_files_num]] <- rjson::fromJSON(file = file)
+  }
+
+  zoning_all_sf <- dplyr::bind_rows(zoning_sf_list)
+
   # get just the overlay districts with geometry
   overlays <- zoning_all_sf |>
-    dplyr::filter(!sf::st_is_empty(geometry)) |>
     dplyr::filter(overlay == TRUE)
   # get just the pd_districts with geometry
   pd_districts <- zoning_all_sf |>
-    dplyr::filter(!sf::st_is_empty(geometry)) |>
     dplyr::filter(planned_dev == TRUE)
   # get just the base districts with geometry
   # this is the one I will use for most of the checks
   zoning_sf <- zoning_all_sf |>
-    dplyr::filter(!sf::st_is_empty(geometry)) |>
     dplyr::filter(overlay == FALSE) |>
     dplyr::filter(planned_dev == FALSE)
-
-  #zoning_data is the json list form of the zoning file
-  zoning_data <- rjson::fromJSON(file = zoning_file)
 
   # get appropriate crs in meters to use in the check footprint function
   crs <- zr_get_crs(zoning_sf)
 
   ## PARCELS ##
   # separate the parcel data into two special feature data frames
-  parcel_geo <- zr_get_parcel_geo(parcels_file) # parcels with side labels
-  parcel_dims <- zr_get_parcel_dims(parcels_file) # parcels with centroid and dimensions
+  parcels_sf_list <- list()
+  for (parcel_file_num in 1:length(parcel_files)){
+    file <- parcel_files[parcel_file_num]
+    parcels_sf_list[[parcel_file_num]] <- sf::st_read(file, quiet = TRUE)
+  }
 
+  combined_parcel_files <- dplyr::bind_rows(parcels_sf_list)
+
+  parcel_geo <- zr_get_parcel_geo(combined_parcel_files) # parcels with side labels
+  parcel_dims <- zr_get_parcel_dims(combined_parcel_files) # parcels with centroid and dimensions
+
+  # get unique parcel names to later find
+  # which parcels don't have a zoning district covering them
+  parcel_ids <- unique(parcel_dims$parcel_id)
 
   ## GET DISTRICT INDICES ##
   # use the base zoning districts to add zoning_id to parcel_dims
   parcel_dims <- zr_find_district_idx(parcel_dims, zoning_sf, "zoning_id")
+
+  # use the pd districts to add zoning_id to parcel_dims
+  pd_parcel_df <- zr_find_district_idx(parcel_dims, pd_districts, "pd_id")
+
+  # use the overlay districts to add zoning_id to parcel_dims
+  parcels_overlays <- zr_find_district_idx(parcel_dims, overlays, "overlay_id")
+
+  # find which parcels don't have a zoning district covering them
+  parcels_not_covered <- parcel_dims$parcel_id[is.na(parcel_dims$zoning_id)]
+  pd_parcels_covered <- pd_parcel_df$parcel_id[!is.na(pd_parcel_df$pd_id)]
+  overlay_parcels_covered <- parcels_overlays$parcel_id[!is.na(parcels_overlays$overlay_id)]
+  parcels_not_covered <- parcels_not_covered[!parcels_not_covered %in% pd_parcels_covered]
+  parcels_not_covered <- parcels_not_covered[!parcels_not_covered %in% overlay_parcels_covered]
+
+  if (length(parcels_not_covered) > 0){
+    warning(paste(length(parcels_not_covered),"/",nrow(parcel_dims),"parcels not covered by given zoning data"))
+  }
 
   zoning_is_na <- parcel_dims$zoning_id |>
     unique() |>
@@ -116,7 +156,7 @@ zr_run_zoning_checks <- function(bldg_file,
   # if parcels are in a planned development, the building is automatically not allowed
   if (nrow(pd_districts) > 0){ # if there are pd_districts
     # make a new df with the pd district indexes
-    pd_parcel_df <- zr_find_district_idx(parcel_dims, pd_districts, "pd_id") |>
+    pd_parcel_df <- pd_parcel_df |>
       dplyr::filter(!is.na(pd_id))
 
     pd_parcels <- unique(pd_parcel_df$parcel_id)
@@ -159,6 +199,7 @@ zr_run_zoning_checks <- function(bldg_file,
     parcel_data <- parcel_df[row_num,]
     parcel_id <- as.character(parcel_data$parcel_id)
     district_data <- zoning_sf[parcel_data$zoning_id,]
+    zoning_data <- zoning_data_list[[district_data$muni_id]]
     vars <- zr_get_variables(bldg_data, parcel_data, district_data, zoning_data)
     zoning_req <- zr_get_zoning_req(district_data, vars = vars)
 
@@ -399,8 +440,8 @@ zr_run_zoning_checks <- function(bldg_file,
   # of the parcels that pass all the checks,
   # the ones in an overlay district will be marked as "MAYBE"
   if (nrow(overlays) > 0 & "overlay" %in% checks){ # if there are pd_districts
-    # make a new df with the overlay district indexes
-    parcels_overlays <- zr_find_district_idx(parcel_dims, overlays, "overlay_id") |>
+    # make the df with the overlay district indexes
+    parcels_overlays <- parcels_overlays |>
       dplyr::filter(!is.na(overlay_id))
 
     overlay_parcels <- unique(parcels_overlays$parcel_id)
@@ -421,20 +462,27 @@ zr_run_zoning_checks <- function(bldg_file,
   ########----END CHECKS----########
 
 
+
   ########----FINALIZING THINGS----########
   # combind all the false_df and the parcel_df
   class(parcel_df$false_reasons) <- "character"
   class(parcel_df$maybe_reasons) <- "character"
+  parcel_df <- parcel_df |>
+    dplyr::mutate(maybe_reasons = ifelse(is.na(maybe_reasons), "", maybe_reasons),
+           false_reasons = ifelse(is.na(false_reasons), "", false_reasons))
   final_df <- dplyr::bind_rows(false_df, parcel_df)
   final_without_geom <- sf::st_drop_geometry(final_df)
   final_df$has_false <- rowSums(final_without_geom == FALSE, na.rm = T)
   final_df$has_maybe <- rowSums(final_without_geom == "MAYBE", na.rm = T)
   # add the "allowed" and "reason" columns
   final_df <- final_df |>
-    dplyr::mutate(allowed = ifelse(has_false > 0, FALSE, ifelse(has_maybe > 0, "MAYBE",TRUE)),
-                  reason = ifelse(!is.na(maybe_reasons) | !is.na(false_reasons),
-                                  paste("FALSE:", false_reasons, "- MAYBE:", maybe_reasons),
-                                  "Building allowed")) |>
+    dplyr::mutate(allowed = ifelse(has_false > 0, FALSE, ifelse(has_maybe > 0, "MAYBE",TRUE)))
+  final_df <- final_df |>
+    dplyr::mutate(reason = ifelse(allowed == FALSE,
+                                  false_reasons,
+                                  ifelse(allowed == "MAYBE",
+                                         maybe_reasons,
+                                         "Building allowed"))) |>
     dplyr::select(!c("has_false","has_maybe"))
 
   # select only the columns needed depending on whether detailed check is TRUE or FALSE
@@ -539,15 +587,24 @@ zr_run_zoning_checks <- function(bldg_file,
   return(final_df)
 
 }
-#
+
 # final_df |>
 #   ggplot() +
-#   geom_sf(aes(color = check_pd))
+#   geom_sf(aes(color = allowed))
 #
 #
 # bldg_file <- "../personal_rpoj/tidyzoning2.0/tidybuildings/tiny_tests/tiny_test2.bldg"
-# parcels_file <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/test_parcels/Addison.parcel"
-# zoning_file <-  "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/ozfs_edited/Addison.zoning"
+# parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/test_parcels/Addison.parcel"
+# zoning_files <-  "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/ozfs_edited/Addison.zoning"
+#
+# bldg_file <- "inst/extdata/2_fam.bldg"
+# parcel_files <- "inst/extdata/Paradise.parcel"
+# zoning_files <-  "inst/extdata/Paradise.zoning"
+#
+# parcel_files <- list.files("../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/test_parcels", full.names = TRUE)
+# zoning_files <- list.files("../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/test_ozfs", full.names = TRUE)
+#
+#
 # detailed_check <- TRUE
 # print_checkpoints <- TRUE
 # checks <- possible_checks
