@@ -6,22 +6,22 @@
 \usage{
 zr_run_zoning_checks(
   bldg_file,
-  parcels_file,
-  zoning_file,
+  parcel_files,
+  zoning_files,
   detailed_check = FALSE,
   print_checkpoints = TRUE,
   checks = possible_checks
 )
 }
 \arguments{
-\item{bldg_file}{The path to the OZFS *.bldg file}
+\item{bldg_file}{The path to the OZFS *.bldg}
 
-\item{parcels_file}{The path to the OZFS *.parcel file}
+\item{parcel_files}{The path, or list of paths, to the OZFS *.parcel file or files}
 
-\item{zoning_file}{The path to the OZFS *.zoning}
+\item{zoning_files}{The path, or list of paths, to the OZFS *.zoning file or files}
 
 \item{detailed_check}{When TRUE, every parcel passes through each
-check no matter the result, and it take more time. When FALSE,
+check no matter the result, and it takes more time. When FALSE,
 subsequent checks are skipped as soon as one check reads FALSE}
 
 \item{print_checkpoints}{When TRUE, runtimes and other info will be
@@ -34,9 +34,8 @@ info for one of the constraints listed in the checks variable, then it is
 assumed that building characteristic is allowed.}
 }
 \value{
-a simple features data frame with the centroid of each parcel with a column
-stating building allowance on the parcel and a column stating the reason
-why certain parcels don't allow the building.
+A simple features data frame with geometry for the centroid of each
+parcel and columns to show info on allowance of the building.
 }
 \description{
 \code{zr_run_zoning_checks()} checks the building information against all the

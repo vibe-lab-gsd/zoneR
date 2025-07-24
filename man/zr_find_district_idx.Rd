@@ -6,22 +6,22 @@
 \usage{
 zr_find_district_idx(
   parcels_centroids_sf,
-  tidyzoning,
+  zoning_sf,
   idx_col_name = "zoning_id"
 )
 }
 \arguments{
 \item{parcels_centroids_sf}{An sf object with the parcel centroids}
 
-\item{tidyzoning}{A simple features object with a row for each zoning district and columns holding the geojson formatted zoning requirements of each district.}
+\item{zoning_sf}{A simple features object with a row for each zoning district and columns holding the geojson formatted zoning requirements of each district.}
 
 \item{idx_col_name}{The name of the new column that will be added with the district index}
 }
 \value{
 The same parcels centroids object that was input but with an additional
-column stating the row number of the corresponding tidyzoning district
+column stating the row number of the corresponding zoning_sf district
 }
 \description{
 \code{zr_find_district_idx()} uses \code{\link[sf:st_join]{sf::st_join()}} to adds a new column to the parcels data that
-contains the tidyzoning row index of the district the parcel is in
+contains the zoning_sf row index of the district the parcel is in
 }

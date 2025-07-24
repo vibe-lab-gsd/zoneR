@@ -20,7 +20,7 @@
 zr_get_crs <- function(geom_data, large_area = FALSE){
 
   # find out what type of data was input
-  if (inherits(geom_data, "sf")){ # it is alread an sf object
+  if (inherits(geom_data, "sf")){ # it is already an sf object
     geom <- geom_data
   } else if (inherits(geom_data, "character")){ # it might be a file path
     if (file.exists(geom_data)){ # it is a file path
