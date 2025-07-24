@@ -42,8 +42,8 @@ zoning constraints to see which parcels will allow the building.</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">zr_run_zoning_checks</span><span class="op">(</span></span>
 <span>  <span class="va">bldg_file</span>,</span>
-<span>  <span class="va">parcels_file</span>,</span>
-<span>  <span class="va">zoning_file</span>,</span>
+<span>  <span class="va">parcel_files</span>,</span>
+<span>  <span class="va">zoning_files</span>,</span>
 <span>  detailed_check <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  print_checkpoints <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  checks <span class="op">=</span> <span class="va">possible_checks</span></span>
@@ -55,20 +55,20 @@ zoning constraints to see which parcels will allow the building.</p>
 
 
 <dl><dt id="arg-bldg-file">bldg_file<a class="anchor" aria-label="anchor" href="#arg-bldg-file"></a></dt>
-<dd><p>The path to the OZFS *.bldg file</p></dd>
+<dd><p>The path to the OZFS *.bldg</p></dd>
 
 
-<dt id="arg-parcels-file">parcels_file<a class="anchor" aria-label="anchor" href="#arg-parcels-file"></a></dt>
-<dd><p>The path to the OZFS *.parcel file</p></dd>
+<dt id="arg-parcel-files">parcel_files<a class="anchor" aria-label="anchor" href="#arg-parcel-files"></a></dt>
+<dd><p>The path, or list of paths, to the OZFS *.parcel file or files</p></dd>
 
 
-<dt id="arg-zoning-file">zoning_file<a class="anchor" aria-label="anchor" href="#arg-zoning-file"></a></dt>
-<dd><p>The path to the OZFS *.zoning</p></dd>
+<dt id="arg-zoning-files">zoning_files<a class="anchor" aria-label="anchor" href="#arg-zoning-files"></a></dt>
+<dd><p>The path, or list of paths, to the OZFS *.zoning file or files</p></dd>
 
 
 <dt id="arg-detailed-check">detailed_check<a class="anchor" aria-label="anchor" href="#arg-detailed-check"></a></dt>
 <dd><p>When TRUE, every parcel passes through each
-check no matter the result, and it take more time. When FALSE,
+check no matter the result, and it takes more time. When FALSE,
 subsequent checks are skipped as soon as one check reads FALSE</p></dd>
 
 
@@ -87,9 +87,8 @@ assumed that building characteristic is allowed.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>a simple features data frame with the centroid of each parcel with a column
-stating building allowance on the parcel and a column stating the reason
-why certain parcels don't allow the building.</p>
+    <p>A simple features data frame with geometry for the centroid of each
+parcel and columns to show info on allowance of the building.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
