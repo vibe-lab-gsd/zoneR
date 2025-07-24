@@ -21,5 +21,6 @@ if (getRversion() >= "2.15.1") {
                            "overlay_id",
                            "has_false",
                            "has_maybe",
-                           "reason"))
+                           "reason",
+                           "possible_checks"))
 }
