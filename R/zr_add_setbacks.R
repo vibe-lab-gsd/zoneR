@@ -1,6 +1,6 @@
 #' Add setback column to the parcel_geo data frame
 #'
-#' `zr_add_setbacks()` returns the parcel_geo object with a new column
+#' `zr_add_setbacks()` returns the parcel_geo data frame with a new column
 #' containing setback values
 #'
 #'
@@ -11,7 +11,7 @@
 #' A district_data object is one row from a zoning simple features object.
 #' @param zoning_req The results of the get_zoning_req funcion. If provided, parcel_geo_dims need not be provided.
 #'
-#' @return Returns the parcel_geo object with a "setbacks" column added to the end.
+#' @return Returns the parcel_geo data frame with a "setbacks" column added to the end.
 #' @export
 #'
 

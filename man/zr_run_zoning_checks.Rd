@@ -10,7 +10,8 @@ zr_run_zoning_checks(
   zoning_files,
   detailed_check = FALSE,
   print_checkpoints = TRUE,
-  checks = possible_checks
+  checks = possible_checks,
+  save_to = NULL
 )
 }
 \arguments{
@@ -32,6 +33,9 @@ to check for every constraint possible in the OZFS. These constraints can found
 in the package data \code{possible_checks}. Note, if a zoning file doesn't have zoning
 info for one of the constraints listed in the checks variable, then it is
 assumed that building characteristic is allowed.}
+
+\item{save_to}{The path or folder directory where you want to save the results
+as a geojson file.}
 }
 \value{
 A simple features data frame with geometry for the centroid of each
