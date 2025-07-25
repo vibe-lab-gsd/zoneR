@@ -46,7 +46,8 @@ zoning constraints to see which parcels will allow the building.</p>
 <span>  <span class="va">zoning_files</span>,</span>
 <span>  detailed_check <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  print_checkpoints <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  checks <span class="op">=</span> <span class="va">possible_checks</span></span>
+<span>  checks <span class="op">=</span> <span class="va">possible_checks</span>,</span>
+<span>  save_to <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -83,6 +84,11 @@ to check for every constraint possible in the OZFS. These constraints can found
 in the package data <code>possible_checks</code>. Note, if a zoning file doesn't have zoning
 info for one of the constraints listed in the checks variable, then it is
 assumed that building characteristic is allowed.</p></dd>
+
+
+<dt id="arg-save-to">save_to<a class="anchor" aria-label="anchor" href="#arg-save-to"></a></dt>
+<dd><p>The path or folder directory where you want to save the results
+as a geojson file.</p></dd>
 
 </dl></div>
     <div class="section level2">
