@@ -22,5 +22,7 @@ if (getRversion() >= "2.15.1") {
                            "has_false",
                            "has_maybe",
                            "reason",
-                           "possible_checks"))
+                           "possible_checks",
+                           "zoning_id",
+                           "district_check"))
 }
