@@ -22,7 +22,6 @@ zr_get_parcel_geo <- function(parcels_file){
   # filter to just have the side geometry if they are labeled
   parcels_geo <- parcels_sf |>
     dplyr::filter(side != "centroid") |>
-    dplyr::filter(side != "unknown") |>
     dplyr::select(parcel_id, side)
 
   return(parcels_geo)
