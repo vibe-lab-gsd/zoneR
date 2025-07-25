@@ -16,6 +16,8 @@
 #' in the package data `possible_checks`. Note, if a zoning file doesn't have zoning
 #' info for one of the constraints listed in the checks variable, then it is
 #' assumed that building characteristic is allowed.
+#' @param save_to The path or folder directory where you want to save the results
+#' as a geojson file.
 #'
 #' @returns A simple features data frame with geometry for the centroid of each
 #' parcel and columns to show info on allowance of the building.
@@ -27,7 +29,8 @@ zr_run_zoning_checks <- function(bldg_file,
                                  zoning_files,
                                  detailed_check = FALSE,
                                  print_checkpoints = TRUE,
-                                 checks = possible_checks){
+                                 checks = possible_checks,
+                                 save_to = NULL){
 
   # track the start time to give a time stamp at end
   total_start_time <- proc.time()[[3]]
@@ -190,11 +193,37 @@ zr_run_zoning_checks <- function(bldg_file,
 
   }
 
+  # DISTRICT CHECK
+  parcel_df <- parcel_df |>
+    dplyr::mutate(district_check = ifelse(is.na(zoning_id), "MAYBE", TRUE))
+
+  if ("MAYBE" %in% unique(parcel_df$district_check)){
+    parcel_df <- parcel_df |>
+      dplyr::mutate(maybe_reasons = ifelse(parcel_id %in% pd_parcels,
+                                           ifelse(!is.na(maybe_reasons),
+                                                  paste(maybe_reasons, "no_district", sep = ", "),
+                                                  "no_district"),
+                                           maybe_reasons))
+
+    # we filter the parcel_df to have just the TRUEs
+    false_parcels <- parcel_df |>
+      dplyr::filter(district_check == 'MAYBE')
+    # Add the false_parcels to the false_df list
+    false_df[[false_df_idx]] <- false_parcels
+    false_df_idx <- false_df_idx + 1
+
+    parcel_df <- parcel_df |>
+      dplyr::filter(district_check == TRUE)
+  }
+
+
   # GET ZONING REQUIREMENTS AND VARIABLES
+  # this loop also creates a vector of parcels with not setback info to be used later
   zone_req_var_time <- proc.time()[[3]]
 
   vars_list <- list()
   zoning_req_list <- list()
+  parcels_no_setbacks <- c()
   for (row_num in 1:nrow(parcel_df)){
     parcel_data <- parcel_df[row_num,]
     parcel_id <- as.character(parcel_data$parcel_id)
@@ -203,6 +232,17 @@ zr_run_zoning_checks <- function(bldg_file,
     vars <- zr_get_variables(bldg_data, parcel_data, district_data, zoning_data)
     zoning_req <- zr_get_zoning_req(district_data, vars = vars)
 
+    # check to see if it has setback and add it to the list
+    if (inherits(zoning_req, "character")){
+      parcels_no_setbacks <- c(parcels_no_setbacks, parcel_id)
+    } else{
+      setback_df <- zoning_req[grepl("setback",zoning_req$constraint_name),]
+      if (sum(unlist(setback_df$min_value)) == 0 | is.na(sum(unlist(setback_df$min_value)))){
+        parcels_no_setbacks <- c(parcels_no_setbacks, parcel_id)
+      }
+    }
+
+    # add the data frames to a list
     vars_list[[parcel_id]] <- vars
     zoning_req_list[[parcel_id]] <- zoning_req
   }
@@ -334,27 +374,27 @@ zr_run_zoning_checks <- function(bldg_file,
     cat(paste(length(true_maybe_list),"parcels are TRUE or MAYBE\n\n"))
   }
 
-  ###### IN PROGRESS
-  zoning_req_empty <- sapply(zoning_req_list, function(x) inherits(x,"character"))
-############# IN PROGRESS
 
   # SIDE LABEL CHECK
-  # if parcels have labeled sides, we can move on to the footprint check
+  # if parcels have labeled sides or no setback requirements,
+  # we can move on to the fit check
   if ("bldg_fit" %in% checks & nrow(parcel_df) > 0){
-    parcels_with_sides <- unique(parcel_geo$parcel_id)
+    parcels_known_sides <- unique(parcel_geo[parcel_geo$side != "unknown",]$parcel_id)
+    parcels_for_bldg_fit <- unique(c(parcels_known_sides, parcels_no_setbacks))
 
     parcel_df <- parcel_df |>
-      dplyr::mutate(parcel_side_lbl = ifelse(parcel_id %in% parcels_with_sides,TRUE, "MAYBE"),
-                    maybe_reasons = ifelse(parcel_id %in% parcels_with_sides, maybe_reasons, ifelse(!is.na(maybe_reasons),paste(maybe_reasons, "side_lbl", sep = ", "),"side_lbl")))
+      dplyr::mutate(parcel_side_lbl = ifelse(parcel_id %in% parcels_for_bldg_fit,TRUE, "MAYBE"),
+                    maybe_reasons = ifelse(parcel_id %in% parcels_for_bldg_fit, maybe_reasons, ifelse(!is.na(maybe_reasons),paste(maybe_reasons, "side_lbl", sep = ", "),"side_lbl")))
 
     parcel_no_sides <- parcel_df |>
-      dplyr::filter(!parcel_id %in% parcels_with_sides)
+      dplyr::filter(!parcel_id %in% parcels_for_bldg_fit)
 
     false_df[[false_df_idx]] <- parcel_no_sides
     false_df_idx <- false_df_idx + 1
 
     parcel_df <- parcel_df |>
-      dplyr::filter(parcel_id %in% parcels_with_sides)
+      dplyr::filter(parcel_id %in% parcels_for_bldg_fit)
+
   }
 
 
@@ -415,7 +455,7 @@ zr_run_zoning_checks <- function(bldg_file,
 
     # if detailed_check == FALSE, then we store the FALSE parcels in a list to be combined later
     # we filter the parcel_df to have just the TRUEs and MAYBEs
-    # so it will be smalle for the next checks
+    # so it will be small for the next checks
     if (detailed_check == FALSE){
       false_parcels <- parcel_df[parcel_df[,"bldg_fit"][[1]] == FALSE,]
       parcel_df <- parcel_df[parcel_df[,"bldg_fit"][[1]] %in% c(TRUE, "MAYBE"),]
@@ -448,7 +488,7 @@ zr_run_zoning_checks <- function(bldg_file,
 
     parcel_df <- parcel_df |>
       dplyr::mutate(check_overlay = ifelse(parcel_id %in% overlay_parcels,"MAYBE", TRUE),
-                    maybe_reasons = ifelse(parcel_id %in% overlay_parcels, ifelse(!is.na(maybe_reasons),paste(maybe_reasons, "parcel in overlay district", sep = ", "),"parcel in overlay district"), maybe_reasons))
+                    maybe_reasons = ifelse(parcel_id %in% overlay_parcels, ifelse(!is.na(maybe_reasons),paste(maybe_reasons, "in_overlay", sep = ", "),"in_overlay"), maybe_reasons))
 
     # print checkpoint info
     if (print_checkpoints){
@@ -581,6 +621,40 @@ zr_run_zoning_checks <- function(bldg_file,
     cat(cat(paste0("total runtime: ", round(total_time,1), " sec (",round(total_time / 60,2)," min)\n\n\n")))
   }
 
+  # SAVE THE FILE
+  if (!is.null(save_to)){
+    # does the file exist?
+    if (file.exists(save_to)){ # the file exists
+      # is it a directory or file?
+      if (file.info(save_to)$isdir){ # a directory
+        # make a new file name
+        new_name <- Sys.time()
+        new_name <- gsub(" ", "__", new_name)
+        new_name <- gsub("[-:]", "_", new_name)
+        new_name <- gsub("\\.", "_", new_name)
+        new_file_name <- paste0("/zr_output_",new_name,".geojson")
+        new_file_path <- paste0(save_to,"/zr_output_",new_file_name)
+        sf::write_sf(final_df, new_file_path)
+        cat(paste("output saved to",new_file_path, "\n"))
+      } else{ # a file
+        # delete the file and then write it
+        file_removed <- file.remove(save_to)
+        sf::write_sf(final_df, save_to)
+        cat(paste("output saved to",save_to, "\n"))
+      }
+    } else{ # the file does not exist
+      # does the directory exist?
+      if (file.exists(dirname(save_to))){ # directory exists
+        # save the file
+        sf::write_sf(final_df, save_to)
+        cat(paste("output saved to",save_to, "\n"))
+      } else{ # directory doesn't exist
+        # warning
+        warning("save_to directory doesn't seem to exist")
+      }
+    }
+  }
+
 
   # Return the final data frame
   # It will contain every parcel with an "allowed" column and a "reason" column
@@ -588,14 +662,15 @@ zr_run_zoning_checks <- function(bldg_file,
 
 }
 
+
 # final_df |>
 #   ggplot() +
 #   geom_sf(aes(color = allowed))
 #
 #
 # bldg_file <- "../personal_rpoj/tidyzoning2.0/tidybuildings/tiny_tests/tiny_test2.bldg"
-# parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/test_parcels/Addison.parcel"
-# zoning_files <-  "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/ozfs_edited/Addison.zoning"
+# parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/test_parcels/Azle.parcel"
+# zoning_files <-  "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/ozfs_edited/Azle.zoning"
 #
 # bldg_file <- "inst/extdata/2_fam.bldg"
 # parcel_files <- "inst/extdata/Paradise.parcel"
