@@ -20,7 +20,7 @@ an “allowed” column containing one of three possible values.
 
 - `FALSE`: The building is not allowed on the parcel
 
-- `MAYBE`: The building might be allowed in the parcel depending on
+- `MAYBE`: The building might be allowed on the parcel depending on
   conditions that are not yet possible to express in OZFS.
 
 ## Installation
@@ -56,8 +56,8 @@ function and assign the result to a variable called zoning_checks.
 
 ``` r
 zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
-                                      parcels_file = parcel_path,
-                                      zoning_file = zoning_path)
+                                      parcel_files = parcel_path,
+                                      zoning_files = zoning_path)
 #> ___data_prep___(0.4 sec)
 #> 
 #> ___get_zoning_req___(0.9 sec)
@@ -65,11 +65,11 @@ zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
 #> ___initial_checks___(0.5 sec)
 #> 21 parcels are TRUE or MAYBE
 #> 
-#> ___bldg_fit___(30.3 sec)
+#> ___bldg_fit___(28.6 sec)
 #> 9 parcels are TRUE or MAYBE
 #> 
 #> _____summary_____
-#> total runtime: 32.1 sec (0.54 min)
+#> total runtime: 30.3 sec (0.51 min)
 #> 0 / 421 parcels allow the building
 #> 11 / 421 parcels might allow the building
 ```
@@ -85,20 +85,13 @@ head(zoning_checks)
 #> Dimension:     XY
 #> Bounding box:  xmin: -97.69917 ymin: 33.1448 xmax: -97.69153 ymax: 33.15607
 #> Geodetic CRS:  WGS 84
-#>                           parcel_id allowed
-#> 1     Wise_County_combined_parcel_1   FALSE
-#> 2 Wise_County_combined_parcel_10300   FALSE
-#> 3 Wise_County_combined_parcel_10450   FALSE
-#> 4 Wise_County_combined_parcel_10451   FALSE
-#> 5 Wise_County_combined_parcel_10452   FALSE
-#> 6 Wise_County_combined_parcel_10464   FALSE
-#>                                                      reason
-#> 1 FALSE encountered: initial_checks - MAYBE encountered: NA
-#> 2 FALSE encountered: initial_checks - MAYBE encountered: NA
-#> 3 FALSE encountered: initial_checks - MAYBE encountered: NA
-#> 4 FALSE encountered: initial_checks - MAYBE encountered: NA
-#> 5 FALSE encountered: initial_checks - MAYBE encountered: NA
-#> 6 FALSE encountered: initial_checks - MAYBE encountered: NA
+#>                           parcel_id allowed                         reason
+#> 1     Wise_County_combined_parcel_1   FALSE               res_type, height
+#> 2 Wise_County_combined_parcel_10300   FALSE               res_type, height
+#> 3 Wise_County_combined_parcel_10450   FALSE               res_type, height
+#> 4 Wise_County_combined_parcel_10451   FALSE res_type, height, unit_density
+#> 5 Wise_County_combined_parcel_10452   FALSE res_type, height, unit_density
+#> 6 Wise_County_combined_parcel_10464   FALSE               res_type, height
 #>                     geometry
 #> 1 POINT (-97.69524 33.14755)
 #> 2 POINT (-97.69382 33.15607)
@@ -121,12 +114,12 @@ when it is done with the different parts of the function.
 
 ``` r
 zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
-                                      parcels_file = parcel_path,
-                                      zoning_file = zoning_path, 
+                                      parcel_files = parcel_path,
+                                      zoning_files = zoning_path, 
                                       checks = "res_type",
                                       print_checkpoints = FALSE)
-#> run finished
-#> total runtime: 1.4 sec (0.02 min)
+#> zoning checks finished
+#> total runtime: 1.3 sec (0.02 min)
 ```
 
 Now we can see that only a few of the parcels are in a district that
@@ -140,11 +133,11 @@ Height Check
 
 ``` r
 zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
-                                      parcels_file = parcel_path,
-                                      zoning_file = zoning_path, 
+                                      parcel_files = parcel_path,
+                                      zoning_files = zoning_path, 
                                       checks = "height",
                                       print_checkpoints = FALSE)
-#> run finished
+#> zoning checks finished
 #> total runtime: 1.4 sec (0.02 min)
 ```
 
@@ -154,12 +147,12 @@ Building Fit Check
 
 ``` r
 zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
-                                      parcels_file = parcel_path,
-                                      zoning_file = zoning_path, 
+                                      parcel_files = parcel_path,
+                                      zoning_files = zoning_path, 
                                       checks = "bldg_fit",
                                       print_checkpoints = FALSE)
-#> run finished
-#> total runtime: 84.9 sec (1.42 min)
+#> zoning checks finished
+#> total runtime: 96.8 sec (1.61 min)
 ```
 
 <img src="man/figures/README-unnamed-chunk-12-1.png" width="100%" />
@@ -179,21 +172,21 @@ FALSE).
 
 ``` r
 zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
-                                      parcels_file = parcel_path,
-                                      zoning_file = zoning_path,
+                                      parcel_files = parcel_path,
+                                      zoning_files = zoning_path,
                                       detailed_check = TRUE)
-#> ___data_prep___(0.1 sec)
+#> ___data_prep___(0.2 sec)
 #> 
-#> ___get_zoning_req___(1.3 sec)
+#> ___get_zoning_req___(1 sec)
 #> 
-#> ___initial_checks___(0.7 sec)
+#> ___initial_checks___(0.5 sec)
 #> 21 parcels are TRUE or MAYBE
 #> 
-#> ___bldg_fit___(1.47 min)
-#> 218 parcels are TRUE or MAYBE
+#> ___bldg_fit___(1.57 min)
+#> 221 parcels are TRUE or MAYBE
 #> 
 #> _____summary_____
-#> total runtime: 90.5 sec (1.51 min)
+#> total runtime: 96 sec (1.6 min)
 #> 0 / 421 parcels allow the building
 #> 11 / 421 parcels might allow the building
 ```
@@ -211,11 +204,12 @@ ordered_sums <- column_true_sums[order(column_true_sums)]
 |:-----------------|-------------:|
 | res_type         |           24 |
 | height           |           97 |
-| bldg_fit         |          205 |
-| parcel_side_lbl  |          251 |
+| bldg_fit         |          208 |
+| parcel_side_lbl  |          254 |
 | unit_density     |          297 |
 | stories          |          397 |
 | lot_cov_bldg     |          418 |
+| district_check   |          421 |
 | unit_size        |          421 |
 
 It appears the res_type constraint is the most restrictive and the
@@ -231,14 +225,14 @@ take in.
 - **bldg_data:** The `.bldg` file read in as a list using
   `rjson::fromJSON()`
 
-- **parcel_dims:** Created from the `zr_get_parcel_dims()` function. A
+- **parcel_dims:** Created with the `zr_get_parcel_dims()` function. A
   simple features data frame with all the centroid and dimensional data
   from the `.parcel` file. It contains one row per parcel.
 
 - **parcel_data:** One row of the parcel_dims data frame representing a
   unique parcel
 
-- **parcel_geo:** Created from the `zr_get_parcel_geo()` function. A
+- **parcel_geo:** Created with the `zr_get_parcel_geo()` function. A
   simple features data frame containing the geometry of each parcel side
   without the centroid or dimensional data.
 

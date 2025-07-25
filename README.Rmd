@@ -31,7 +31,7 @@ an "allowed" column containing one of three possible values.
 
 - `FALSE`: The building is not allowed on the parcel
 
-- `MAYBE`: The building might be allowed in the parcel depending on 
+- `MAYBE`: The building might be allowed on the parcel depending on 
 conditions that are not yet possible to express in OZFS. 
 
 ## Installation
@@ -66,8 +66,8 @@ We can then put each of the files into the `zr_run_zoning_checks()` function and
 assign the result to a variable called zoning_checks. 
 ```{r}
 zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
-                                      parcels_file = parcel_path,
-                                      zoning_file = zoning_path)
+                                      parcel_files = parcel_path,
+                                      zoning_files = zoning_path)
 ```
 
 The result of the function is a simple features data frame with the following columns: "parcel_id", "allowed", "reason", "geometry." Note that the geometry is the centroid of the parcel. 
@@ -106,8 +106,8 @@ function.
 
 ```{r}
 zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
-                                      parcels_file = parcel_path,
-                                      zoning_file = zoning_path, 
+                                      parcel_files = parcel_path,
+                                      zoning_files = zoning_path, 
                                       checks = "res_type",
                                       print_checkpoints = FALSE)
 ```
@@ -140,8 +140,8 @@ Here are a few other constraint checks to visualize.
 Height Check
 ```{r}
 zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
-                                      parcels_file = parcel_path,
-                                      zoning_file = zoning_path, 
+                                      parcel_files = parcel_path,
+                                      zoning_files = zoning_path, 
                                       checks = "height",
                                       print_checkpoints = FALSE)
 ```
@@ -169,8 +169,8 @@ parcel_polygons |>
 Building Fit Check
 ```{r}
 zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
-                                      parcels_file = parcel_path,
-                                      zoning_file = zoning_path, 
+                                      parcel_files = parcel_path,
+                                      zoning_files = zoning_path, 
                                       checks = "bldg_fit",
                                       print_checkpoints = FALSE)
 ```
@@ -209,8 +209,8 @@ consecutive checks if a previous check yields FALSE).
 
 ```{r}
 zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
-                                      parcels_file = parcel_path,
-                                      zoning_file = zoning_path,
+                                      parcel_files = parcel_path,
+                                      zoning_files = zoning_path,
                                       detailed_check = TRUE)
 ```
 
@@ -246,14 +246,14 @@ the different zoneR functions take in.
 -   **bldg_data:** The `.bldg` file read in as a list using
     `rjson::fromJSON()`
 
--   **parcel_dims:** Created from the `zr_get_parcel_dims()` function. A
+-   **parcel_dims:** Created with the `zr_get_parcel_dims()` function. A
     simple features data frame with all the centroid and dimensional
     data from the `.parcel` file. It contains one row per parcel.
 
 -   **parcel_data:** One row of the parcel_dims data frame representing
     a unique parcel
 
--   **parcel_geo:** Created from the `zr_get_parcel_geo()` function. A
+-   **parcel_geo:** Created with the `zr_get_parcel_geo()` function. A
     simple features data frame containing the geometry of each parcel
     side without the centroid or dimensional data.
 
