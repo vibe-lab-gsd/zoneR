@@ -2,7 +2,10 @@ Package: zoneR
 Type: Package
 Title: Zoning Code Analysis
 Version: 0.5.0
-Author: Kamryn Mansfield
+Authors@R: c(
+    person("Kamryn", "Mansfield", email = "mansfieldkamryn@gmail.com", role = "aut"),
+    person("Carole", "Voulgaris", email = "cvoulgaris@gsd.harvard.edu", role = c("aut", "cre"))
+    )
 Maintainer: Kamryn Mansfield <mansfieldkamryn@gmail.com>
 Description: The zoneR package was built to analyze housing capacity
     under existing zoning laws. It is designed to work with OZFS files (*.bldg, 
