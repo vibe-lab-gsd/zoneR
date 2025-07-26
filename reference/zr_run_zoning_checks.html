@@ -60,11 +60,13 @@ zoning constraints to see which parcels will allow the building.</p>
 
 
 <dt id="arg-parcel-files">parcel_files<a class="anchor" aria-label="anchor" href="#arg-parcel-files"></a></dt>
-<dd><p>The path, or list of paths, to the OZFS *.parcel file or files</p></dd>
+<dd><p>The path to an OZFS <code>.parcel</code> file, or the path to a
+folder containing OZFS <code>.parcel</code> files</p></dd>
 
 
 <dt id="arg-zoning-files">zoning_files<a class="anchor" aria-label="anchor" href="#arg-zoning-files"></a></dt>
-<dd><p>The path, or list of paths, to the OZFS *.zoning file or files</p></dd>
+<dd><p>The path to an OZFS <code>.zoning</code> file, or the path to a
+folder containing OZFS <code>.zoning</code> files</p></dd>
 
 
 <dt id="arg-detailed-check">detailed_check<a class="anchor" aria-label="anchor" href="#arg-detailed-check"></a></dt>
@@ -96,13 +98,27 @@ as a geojson file.</p></dd>
     <p>A simple features data frame with geometry for the centroid of each
 parcel and columns to show info on allowance of the building.</p>
     </div>
+    <div class="section level2">
+    <h2 id="zoning-checks">Zoning Checks<a class="anchor" aria-label="anchor" href="#zoning-checks"></a></h2>
+
+
+<p>The checks that can take place in <code>zr_run_zoning_checks()</code> are included in
+the table below. Most checks are not required and only checked if specified
+by the user in the <code>checks</code> argument. All optional checks possible are
+stored in the <code>possible_checks</code> data which is the default value of the <code>checks</code>
+argument. A few checks are built in to the function and, therefore, not a part of the
+<code>checks</code> argument.</p>
+<p>The resulting data frame of <code>zr_run_zoning_checks()</code> will have a "reason" column with
+the names of any checks that caused a FALSE or a MAYBE building allowance.
+The table below specifies what each check means when it is part of the "reason"
+column.</p><table class="table table"><tr><td>Possible Checks</td><td>Type</td><td>Reason Column Usage</td></tr><tr><td>PD_dist</td><td>built in</td><td>FALSE returned because parcel is in a planned development district</td></tr><tr><td>side_lbl</td><td>built in</td><td>MAYBE returned because the parcel sides were not labeled and check_fit was not run</td></tr><tr><td>res_type</td><td>user input</td><td>Residential type check returned FALSE or MAYBE</td></tr><tr><td>far</td><td>user input</td><td>Floor Area Ratio check returned FALSE or MAYBE</td></tr><tr><td>fl_area</td><td>user input</td><td>Floor area check returned FALSE or MAYBE</td></tr><tr><td>fl_area_first</td><td>user input</td><td>Area of first floor check returned FALSE or MAYBE</td></tr><tr><td>fl_area_top</td><td>user input</td><td>Area of top floor check returned FALSE or MAYBE</td></tr><tr><td>footprint</td><td>user input</td><td>Footprint check returned FALSE or MAYBE</td></tr><tr><td>height</td><td>user input</td><td>Height check returned FALSE or MAYBE</td></tr><tr><td>height_eave</td><td>user input</td><td>Height eave check returned FALSE or MAYBE</td></tr><tr><td>lot_cov_bldg</td><td>user input</td><td>Lot coverage check returned FALSE or MAYBE</td></tr><tr><td>lot_area</td><td>user input</td><td>Lot area check returned FALSE or MAYBE</td></tr><tr><td>parking_enclosed</td><td>user input</td><td>Enclosed parking check returned FALSE or MAYBE</td></tr><tr><td>stories</td><td>user input</td><td>Stories check returned FALSE or MAYBE</td></tr><tr><td>unit_0bed</td><td>user input</td><td>0-bed unit quantity check returned FALSE or MAYBE</td></tr><tr><td>unit_1bed</td><td>user input</td><td>1-bed unit quantity check returned FALSE or MAYBE</td></tr><tr><td>unit_2bed</td><td>user input</td><td>2-bed unit quantity check returned FALSE or MAYBE</td></tr><tr><td>unit_3bed</td><td>user input</td><td>3-bed unit quantity check returned FALSE or MAYBE</td></tr><tr><td>unit_4bed</td><td>user input</td><td>4plus-bed unit quantity check returned FALSE or MAYBE</td></tr><tr><td>unit_density</td><td>user input</td><td>Unit density check returned FALSE or MAYBE</td></tr><tr><td>unit_pct_0bed</td><td>user input</td><td>Percent 0-bed units check returned FALSE or MAYBE</td></tr><tr><td>unit_pct_1bed</td><td>user input</td><td>Percent 1-bed units check returned FALSE or MAYBE</td></tr><tr><td>unit_pct_2bed</td><td>user input</td><td>Percent 2-bed units check returned FALSE or MAYBE</td></tr><tr><td>unit_pct_3bed</td><td>user input</td><td>Percent 3-bed units check returned FALSE or MAYBE</td></tr><tr><td>unit_pct_4bed</td><td>user input</td><td>Percent 4plus-bed units check returned FALSE or MAYBE</td></tr><tr><td>total_units</td><td>user input</td><td>Total units check returned FALSE or MAYBE</td></tr><tr><td>unit_size_avg</td><td>user input</td><td>Average unit size check returned FALSE or MAYBE</td></tr><tr><td>unit_size</td><td>user input</td><td>Unit size check returned FALSE or MAYBE</td></tr><tr><td>bldg_fit</td><td>user input</td><td>Building fit check returned FALSE or MAYBE</td></tr><tr><td>overlay</td><td>user input</td><td>MAYBE returned because parcel is in an overlay district</td></tr></table></div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Kamryn Mansfield.</p>
+  <p>Developed by Kamryn Mansfield, Carole Voulgaris.</p>
 </div>
 
 <div class="pkgdown-footer-right">
