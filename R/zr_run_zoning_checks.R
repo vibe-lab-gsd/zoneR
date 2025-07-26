@@ -752,25 +752,21 @@ zr_run_zoning_checks <- function(bldg_file,
 
 # final_df |>
 #   ggplot() +
-#   geom_sf(aes(color = dist_abbr))
-#
-#
-# bldg_file <- "../personal_rpoj/tidyzoning2.0/tidybuildings/tiny_tests/tiny_test2.bldg"
-# parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/test_parcels/Azle.parcel"
-# zoning_files <-  "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/ozfs_edited/Azle.zoning"
+#   geom_sf(aes(color = allowed))
 #
 # bldg_file <- "inst/extdata/2_fam.bldg"
-# parcel_files <- "inst/extdata/Paradise.parcel"
-# zoning_files <-  "inst/extdata/Paradise.zoning"
-#
 # parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_parcels_to_test/"
 # zoning_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_to_test/"
 #
-# parcel_files <- parcel_files[c(1,5)]
-# zoning_files <- zoning_files[c(1,5)]
-#
 # detailed_check <- TRUE
 # print_checkpoints <- TRUE
-# checks <- possible_checks
+# checks <- possible_checks[possible_checks != "bldg_fit"]
 # save_to <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/tested_pzackage_output.geojson"
 #
+# all_checks_but_bldg_fit <- zr_run_zoning_checks(bldg_file,
+#                                  parcel_files,
+#                                  zoning_files,
+#                                  detailed_check,
+#                                  print_checkpoints,
+#                                  checks,
+#                                  save_to)
