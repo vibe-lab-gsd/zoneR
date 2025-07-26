@@ -3,9 +3,58 @@
 #' `zr_run_zoning_checks()` checks the building information against all the
 #' zoning constraints to see which parcels will allow the building.
 #'
+#' @section Zoning Checks:
+#' The checks that can take place in `zr_run_zoning_checks()` are included in
+#' the table below. Most checks are not required and only checked if specified
+#' by the user in the `checks` argument. All optional checks possible are
+#' stored in the `possible_checks` data which is the default value of the `checks`
+#' argument. A few checks are built in to the function and, therefore, not a part of the
+#' `checks` argument.
+#'
+#' The resulting data frame of `zr_run_zoning_checks()` will have a "reason" column with
+#' the names of any checks that caused a FALSE or a MAYBE building allowance.
+#' The table below specifies what each check means when it is part of the "reason"
+#' column.
+#'
+#' |Possible Checks  |Type       |Reason Column Usage    |
+#' |:----------------|:----------|:----------------------|
+#' |PD_dist          |built in   |FALSE returned because parcel is in a planned development district|
+#' |side_lbl         |built in   |MAYBE returned because the parcel sides were not labeled and check_fit was not run|
+#' |res_type         |user input |Residential type check returned FALSE or MAYBE|
+#' |far              |user input |Floor Area Ratio check returned FALSE or MAYBE|
+#' |fl_area          |user input |Floor area check returned FALSE or MAYBE|
+#' |fl_area_first    |user input |Area of first floor check returned FALSE or MAYBE|
+#' |fl_area_top      |user input |Area of top floor check returned FALSE or MAYBE|
+#' |footprint        |user input |Footprint check returned FALSE or MAYBE|
+#' |height           |user input |Height check returned FALSE or MAYBE|
+#' |height_eave      |user input |Height eave check returned FALSE or MAYBE|
+#' |lot_cov_bldg     |user input |Lot coverage check returned FALSE or MAYBE|
+#' |lot_area         |user input |Lot area check returned FALSE or MAYBE|
+#' |parking_enclosed |user input |Enclosed parking check returned FALSE or MAYBE|
+#' |stories          |user input |Stories check returned FALSE or MAYBE|
+#' |unit_0bed        |user input |0-bed unit quantity check returned FALSE or MAYBE|
+#' |unit_1bed        |user input |1-bed unit quantity check returned FALSE or MAYBE|
+#' |unit_2bed        |user input |2-bed unit quantity check returned FALSE or MAYBE|
+#' |unit_3bed        |user input |3-bed unit quantity check returned FALSE or MAYBE|
+#' |unit_4bed        |user input |4plus-bed unit quantity check returned FALSE or MAYBE|
+#' |unit_density     |user input |Unit density check returned FALSE or MAYBE|
+#' |unit_pct_0bed    |user input |Percent 0-bed units check returned FALSE or MAYBE|
+#' |unit_pct_1bed    |user input |Percent 1-bed units check returned FALSE or MAYBE|
+#' |unit_pct_2bed    |user input |Percent 2-bed units check returned FALSE or MAYBE|
+#' |unit_pct_3bed    |user input |Percent 3-bed units check returned FALSE or MAYBE|
+#' |unit_pct_4bed    |user input |Percent 4plus-bed units check returned FALSE or MAYBE|
+#' |total_units      |user input |Total units check returned FALSE or MAYBE|
+#' |unit_size_avg    |user input |Average unit size check returned FALSE or MAYBE|
+#' |unit_size        |user input |Unit size check returned FALSE or MAYBE|
+#' |bldg_fit         |user input |Building fit check returned FALSE or MAYBE|
+#' |overlay          |user input |MAYBE returned because parcel is in an overlay district|
+#'
+#'
 #' @param bldg_file The path to the OZFS *.bldg
-#' @param parcel_files The path, or list of paths, to the OZFS *.parcel file or files
-#' @param zoning_files The path, or list of paths, to the OZFS *.zoning file or files
+#' @param parcel_files The path to an OZFS `.parcel` file, or the path to a
+#' folder containing OZFS `.parcel` files
+#' @param zoning_files The path to an OZFS `.zoning` file, or the path to a
+#' folder containing OZFS `.zoning` files
 #' @param detailed_check When TRUE, every parcel passes through each
 #' check no matter the result, and it takes more time. When FALSE,
 #' subsequent checks are skipped as soon as one check reads FALSE
@@ -35,6 +84,50 @@ zr_run_zoning_checks <- function(bldg_file,
   # track the start time to give a time stamp at end
   total_start_time <- proc.time()[[3]]
 
+  if (length(zoning_files) > 1 & length(parcel_files) > 1){
+    stop("Incorrect parcel_files and zoning_files input. Must be one file path, not multiple.")
+  } else if (length(zoning_files) > 1){
+    stop("Incorrect zoning_files input. Must be one file path, not multiple.")
+  } else if (length(parcel_files) > 1){
+    stop("Incorrect parcel_files input. Must be one file path, not multiple.")
+  }
+
+  # make sure input is correct and turn it into a list of zoning files
+  if (file.exists(zoning_files)){ # is an existing file
+    if (file.info(zoning_files)$isdir){ # is a folder
+      zoning_files <- list.files(path = zoning_files, pattern = "\\.zoning$", full.names = TRUE)
+      if (length(zoning_files) == 0){
+        stop("No .zoning files found in given zoning_files directory")
+      }
+    } else{ # is a file
+      if (grepl(pattern = "\\.zoning$", zoning_files)){ # is a .zoning file
+        zoning_files <- zoning_files
+      } else{ # is not a .zoning file
+        stop("zoning_files is not a .zoning file")
+      }
+    }
+  } else{ # is not an existing file
+    stop("zoning_files input is not an existing file path")
+  }
+
+  # make sure input is correct and turn it into a list of parcel files
+  if (file.exists(parcel_files)){ # is an existing file
+    if (file.info(parcel_files)$isdir){ # is a folder
+      parcel_files <- list.files(path = parcel_files, pattern = "\\.parcel$", full.names = TRUE)
+      if (length(parcel_files) == 0){
+        stop("No .parcel files found in given parcel_files directory")
+      }
+    } else{ # is a file
+      if (grepl(pattern = "\\.parcel$", parcel_files)){ # is a .zoning file
+        parcel_files <- parcel_files
+      } else{ # is not a .zoning file
+        stop("parcel_files is not a .parcel file")
+      }
+    }
+  } else{ # is not an existing file
+    stop("parcel_files input is not an existing file path")
+  }
+
   incorrect_checks <- checks[!checks %in% possible_checks]
 
   if (length(incorrect_checks) > 0){
@@ -47,7 +140,7 @@ zr_run_zoning_checks <- function(bldg_file,
                                        "overlay")]
 
   ########---- START DATA PREP----########
-  ## the buildign json list ##
+  ## the building json list ##
   bldg_data <- rjson::fromJSON(file = bldg_file)
 
   ## zoning data ##
@@ -56,18 +149,25 @@ zr_run_zoning_checks <- function(bldg_file,
   zoning_sf_list <- list()
   for (zoning_files_num in 1:length(zoning_files)){
     file <- zoning_files[[zoning_files_num]]
-    zone_sf <- sf::st_read(file, quiet = TRUE) |>
-      dplyr::filter(!sf::st_is_empty(geometry)) |>
-      dplyr::mutate(muni_id = zoning_files_num)
-
-    zone_sf$res_types_allowed <- zone_sf$res_types_allowed |> as.list()
-
-    zoning_sf_list[[zoning_files_num]] <- zone_sf
 
     # zoning_data is the json list form of the zoning file
     # we will match the zoning_data_list idx with the zoning$muni_id column when we are
     # looping through zr_get_variables()
-    zoning_data_list[[zoning_files_num]] <- rjson::fromJSON(file = file)
+    zoning_data_from_json <- rjson::fromJSON(file = file)
+    zoning_data_list[[zoning_files_num]] <- zoning_data_from_json
+    zoning_data_muni_name <- zoning_data_from_json$muni_name
+
+    # get rid of empty geometries and add a muni_id and muni_name to the zoning df
+    zone_sf <- sf::st_read(file, quiet = TRUE) |>
+      dplyr::filter(!sf::st_is_empty(geometry)) |>
+      dplyr::mutate(muni_id = zoning_files_num,
+                    muni_name = zoning_data_muni_name)
+
+    # make res_types_allowed a list so that it will bind properly
+    zone_sf$res_types_allowed <- zone_sf$res_types_allowed |> as.list()
+
+    # add the zoning df to a list that will later be bound into one df
+    zoning_sf_list[[zoning_files_num]] <- zone_sf
   }
 
   zoning_all_sf <- dplyr::bind_rows(zoning_sf_list)
@@ -116,13 +216,9 @@ zr_run_zoning_checks <- function(bldg_file,
 
   # find which parcels don't have a zoning district covering them
   parcels_not_covered <- parcel_dims$parcel_id[is.na(parcel_dims$zoning_id)]
-  pd_parcels_covered <- pd_parcel_df$parcel_id[!is.na(pd_parcel_df$pd_id)]
-  overlay_parcels_covered <- parcels_overlays$parcel_id[!is.na(parcels_overlays$overlay_id)]
-  parcels_not_covered <- parcels_not_covered[!parcels_not_covered %in% pd_parcels_covered]
-  parcels_not_covered <- parcels_not_covered[!parcels_not_covered %in% overlay_parcels_covered]
 
   if (length(parcels_not_covered) > 0){
-    warning(paste(length(parcels_not_covered),"/",nrow(parcel_dims),"parcels not covered by given zoning data"))
+    warning(paste(length(parcels_not_covered),"/",nrow(parcel_dims),"parcels not covered by a base district. Excluded from analysis"))
   }
 
   zoning_is_na <- parcel_dims$zoning_id |>
@@ -134,11 +230,19 @@ zr_run_zoning_checks <- function(bldg_file,
   }
 
   # add false_reasons and maybe_reasons columns to parcel_dims (for tracking maybes and falses)
+  # filter it to only the parcels that have a base district
+  # add the muni_name and dist_abbr
   # this parcel_df is what we will use for most of the calculations
+  dist_abbr_vec <- zoning_sf$dist_abbr
+  muni_name_vec <- zoning_sf$muni_name
+
   parcel_df <- parcel_dims |>
+    dplyr::filter(!is.na(zoning_id)) |>
     dplyr::mutate(false_reasons = as.character(NA),
                   maybe_reasons = as.character(NA))
 
+  parcel_df$muni_name <- muni_name_vec[parcel_df$zoning_id]
+  parcel_df$dist_abbr <- dist_abbr_vec[parcel_df$zoning_id]
 
 
   # start a list that will store the false data frames of the check functions
@@ -192,30 +296,6 @@ zr_run_zoning_checks <- function(bldg_file,
     }
 
   }
-
-  # DISTRICT CHECK
-  parcel_df <- parcel_df |>
-    dplyr::mutate(district_check = ifelse(is.na(zoning_id), "MAYBE", TRUE))
-
-  if ("MAYBE" %in% unique(parcel_df$district_check)){
-    parcel_df <- parcel_df |>
-      dplyr::mutate(maybe_reasons = ifelse(parcel_id %in% pd_parcels,
-                                           ifelse(!is.na(maybe_reasons),
-                                                  paste(maybe_reasons, "no_district", sep = ", "),
-                                                  "no_district"),
-                                           maybe_reasons))
-
-    # we filter the parcel_df to have just the TRUEs
-    false_parcels <- parcel_df |>
-      dplyr::filter(district_check == 'MAYBE')
-    # Add the false_parcels to the false_df list
-    false_df[[false_df_idx]] <- false_parcels
-    false_df_idx <- false_df_idx + 1
-
-    parcel_df <- parcel_df |>
-      dplyr::filter(district_check == TRUE)
-  }
-
 
   # GET ZONING REQUIREMENTS AND VARIABLES
   # this loop also creates a vector of parcels with not setback info to be used later
@@ -488,7 +568,7 @@ zr_run_zoning_checks <- function(bldg_file,
 
     parcel_df <- parcel_df |>
       dplyr::mutate(check_overlay = ifelse(parcel_id %in% overlay_parcels,"MAYBE", TRUE),
-                    maybe_reasons = ifelse(parcel_id %in% overlay_parcels, ifelse(!is.na(maybe_reasons),paste(maybe_reasons, "in_overlay", sep = ", "),"in_overlay"), maybe_reasons))
+                    maybe_reasons = ifelse(parcel_id %in% overlay_parcels, ifelse(!is.na(maybe_reasons),paste(maybe_reasons, "overlay", sep = ", "),"overlay"), maybe_reasons))
 
     # print checkpoint info
     if (print_checkpoints){
@@ -529,20 +609,22 @@ zr_run_zoning_checks <- function(bldg_file,
   if (detailed_check == FALSE){
     final_df <- final_df |>
       dplyr::select(dplyr::any_of(c("parcel_id",
-                              "allowed",
-                              "reason",
-                              "geometry")))
+                                    "muni_name",
+                                    "dist_abbr",
+                                    "allowed",
+                                    "reason",
+                                    "geometry")))
   } else{
     final_df <- final_df |>
       dplyr::select(!dplyr::any_of(c("maybe_reasons",
-                              "false_reasons",
-                              "lot_width",
-                              "lot_depth",
-                              "lot_area",
-                              "lot_type",
-                              "zoning_id",
-                              "pd_id",
-                              "overlay_id")))
+                                     "false_reasons",
+                                     "lot_width",
+                                     "lot_depth",
+                                     "lot_area",
+                                     "lot_type",
+                                     "zoning_id",
+                                     "pd_id",
+                                     "overlay_id")))
   }
 
 
@@ -553,6 +635,9 @@ zr_run_zoning_checks <- function(bldg_file,
   duplicates <- unique(final_df$parcel_id[duplicated(final_df$parcel_id)])
 
   if (length(duplicates) > 0){
+
+    warning(paste(length(duplicates),"parcels are covered by multiple base districts."))
+
     # loop through each duplicated parcel_id
     new_dfs <- list()
     length(new_dfs) <- length(duplicates)
@@ -655,6 +740,9 @@ zr_run_zoning_checks <- function(bldg_file,
     }
   }
 
+  if (!is.null(final_df$lot_area.1)){
+    names(final_df)[names(final_df) == "lot_area.1"] <- "lot_area"
+  }
 
   # Return the final data frame
   # It will contain every parcel with an "allowed" column and a "reason" column
@@ -662,10 +750,9 @@ zr_run_zoning_checks <- function(bldg_file,
 
 }
 
-
 # final_df |>
 #   ggplot() +
-#   geom_sf(aes(color = allowed))
+#   geom_sf(aes(color = dist_abbr))
 #
 #
 # bldg_file <- "../personal_rpoj/tidyzoning2.0/tidybuildings/tiny_tests/tiny_test2.bldg"
@@ -676,10 +763,14 @@ zr_run_zoning_checks <- function(bldg_file,
 # parcel_files <- "inst/extdata/Paradise.parcel"
 # zoning_files <-  "inst/extdata/Paradise.zoning"
 #
-# parcel_files <- list.files("../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/test_parcels", full.names = TRUE)
-# zoning_files <- list.files("../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/test_ozfs", full.names = TRUE)
+# parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_parcels_to_test/"
+# zoning_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_to_test/"
 #
+# parcel_files <- parcel_files[c(1,5)]
+# zoning_files <- zoning_files[c(1,5)]
 #
 # detailed_check <- TRUE
 # print_checkpoints <- TRUE
 # checks <- possible_checks
+# save_to <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/tested_pzackage_output.geojson"
+#
