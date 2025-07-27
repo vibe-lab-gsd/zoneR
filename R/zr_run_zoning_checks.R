@@ -760,8 +760,8 @@ zr_run_zoning_checks <- function(bldg_file,
 #
 # detailed_check <- TRUE
 # print_checkpoints <- TRUE
-# checks <- possible_checks[possible_checks != "bldg_fit"]
-# save_to <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/tested_pzackage_output.geojson"
+# checks <- possible_checks
+# save_to <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/five_city_test_output.geojson"
 #
 # all_checks_but_bldg_fit <- zr_run_zoning_checks(bldg_file,
 #                                  parcel_files,
