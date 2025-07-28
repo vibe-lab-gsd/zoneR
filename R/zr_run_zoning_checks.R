@@ -200,6 +200,39 @@ zr_run_zoning_checks <- function(bldg_file,
   parcel_geo <- zr_get_parcel_geo(combined_parcel_files) # parcels with side labels
   parcel_dims <- zr_get_parcel_dims(combined_parcel_files) # parcels with centroid and dimensions
 
+  # og_parcel_dims <- parcel_dims
+
+  # check for parcel duplicates and update as necessary
+  dups <- which(duplicated(parcel_dims$parcel_id) | duplicated(parcel_dims$parcel_id, fromLast = TRUE))
+  dups_deleted <- 0
+  dups_edited <- 0
+  for (id in unique(parcel_dims$parcel_id[dups])) {
+    idx <- which(parcel_dims$parcel_id == id)
+    geom_text <- sf::st_as_text(parcel_dims$geometry[idx])
+    if (all(geom_text[[1]] == geom_text)) {
+      # If all geometries are equal, keep the first, drop others
+      parcel_dims <- parcel_dims[-idx[-1], ]
+      dups_deleted <- dups_deleted + 1
+    } else {
+      # If geometries differ, assign new IDs to duplicates beyond the first
+      for (j in 2:length(idx)) {
+        parcel_dims$parcel_id[idx[j]] <- paste0(parcel_dims$parcel_id[idx[j]], "_", j)
+        dups_edited <- dups_edited + 1
+      }
+    }
+  }
+
+  # give a warning explaining what was done to the duplicates
+  if (dups_deleted > 0 & dups_edited > 0){
+    warning(paste0(dups_deleted, " parcels removed based on duplicate geometry and parcel_id \n",
+                  dups_edited, " parcel ids edited based on duplicate parcel_id but different geometry"))
+  } else if (dups_deleted > 0){
+    warning(paste0(dups_deleted, " parcels removed based on duplicate geometry and parcel_id"))
+  } else if (dups_edited > 0){
+    warning(paste0(dups_edited, " parcel ids edited based on duplicate parcel_id but different geometry"))
+  }
+
+
   # get unique parcel names to later find
   # which parcels don't have a zoning district covering them
   parcel_ids <- unique(parcel_dims$parcel_id)
@@ -262,15 +295,25 @@ zr_run_zoning_checks <- function(bldg_file,
   pd_time <- proc.time()[[3]]
   # if parcels are in a planned development, the building is automatically not allowed
   if (nrow(pd_districts) > 0){ # if there are pd_districts
+
+    pd_overlay_idx <- which(pd_districts$overlay == TRUE)
+
     # make a new df with the pd district indexes
     pd_parcel_df <- pd_parcel_df |>
       dplyr::filter(!is.na(pd_id))
 
     pd_parcels <- unique(pd_parcel_df$parcel_id)
 
-    parcel_df <- parcel_df |>
-      dplyr::mutate(check_pd = ifelse(parcel_id %in% pd_parcels, FALSE, TRUE),
-                    false_reasons = ifelse(parcel_id %in% pd_parcels, ifelse(!is.na(false_reasons),paste(false_reasons, "PD_dist", sep = ", "),"PD_dist"), false_reasons))
+    if (length(pd_overlay_idx) > 0){
+      parcel_df <- parcel_df |>
+        dplyr::mutate(check_pd = ifelse(parcel_id %in% pd_parcels, FALSE, TRUE),
+                      false_reasons = ifelse(zoning_id %in% pd_overlay_idx, ifelse(!is.na(false_reasons),paste(false_reasons, "PD_overlay", sep = ", "),"PD_overlay"),
+                                             ifelse(parcel_id %in% pd_parcels, ifelse(!is.na(false_reasons),paste(false_reasons, "PD_dist", sep = ", "),"PD_dist"), false_reasons)))
+    } else{
+      parcel_df <- parcel_df |>
+        dplyr::mutate(check_pd = ifelse(parcel_id %in% pd_parcels, FALSE, TRUE),
+                      false_reasons = ifelse(parcel_id %in% pd_parcels, ifelse(!is.na(false_reasons),paste(false_reasons, "PD_dist", sep = ", "),"PD_dist"), false_reasons))
+    }
 
     # if detailed_check == FALSE, then we store the FALSE parcels in a list to be combined later
     # we filter the parcel_df to have just the TRUEs and MAYBEs
@@ -559,7 +602,7 @@ zr_run_zoning_checks <- function(bldg_file,
   overlay_time <- proc.time()[[3]]
   # of the parcels that pass all the checks,
   # the ones in an overlay district will be marked as "MAYBE"
-  if (nrow(overlays) > 0 & "overlay" %in% checks){ # if there are pd_districts
+  if (nrow(overlays) > 0 & "overlay" %in% checks){ # if there are overlays
     # make the df with the overlay district indexes
     parcels_overlays <- parcels_overlays |>
       dplyr::filter(!is.na(overlay_id))
@@ -584,12 +627,12 @@ zr_run_zoning_checks <- function(bldg_file,
 
 
   ########----FINALIZING THINGS----########
-  # combind all the false_df and the parcel_df
-  class(parcel_df$false_reasons) <- "character"
-  class(parcel_df$maybe_reasons) <- "character"
+  # combined all the false_df and the parcel_df
   parcel_df <- parcel_df |>
     dplyr::mutate(maybe_reasons = ifelse(is.na(maybe_reasons), "", maybe_reasons),
            false_reasons = ifelse(is.na(false_reasons), "", false_reasons))
+  class(parcel_df$false_reasons) <- "character"
+  class(parcel_df$maybe_reasons) <- "character"
   final_df <- dplyr::bind_rows(false_df, parcel_df)
   final_without_geom <- sf::st_drop_geometry(final_df)
   final_df$has_false <- rowSums(final_without_geom == FALSE, na.rm = T)
@@ -636,58 +679,64 @@ zr_run_zoning_checks <- function(bldg_file,
 
   if (length(duplicates) > 0){
 
-    warning(paste(length(duplicates),"parcels are covered by multiple base districts."))
+    warning(paste(length(duplicates),"parcels are covered by multiple base districts.\nRefer to the is_duplicate column in results."))
 
-    # loop through each duplicated parcel_id
-    new_dfs <- list()
-    length(new_dfs) <- length(duplicates)
-    for (i in 1:length(duplicates)){
-      id <- duplicates[[i]]
+    final_df$is_duplicate[duplicated(final_df$parcel_id) | duplicated(final_df$parcel_id, fromLast = TRUE)] <- TRUE
+    final_df$is_duplicate[is.na(final_df$is_duplicate)] <- FALSE
 
-      # filter to just the first duplicate ids
-      new_df <- final_df |>
-        dplyr::filter(parcel_id == id)
+    # end of this part (can probably delete the rest)
+    ##########################
 
-      # make a vector of all the allowed values
-      allowed_vals <- new_df$allowed
-
-      # if all duplicates are TRUE, then it is still TRUE
-      # if all duplicates are FALSE, then it is still FALSE
-      # if any other combination, it is MABYE
-      if (sum(allowed_vals == TRUE) == length(allowed_vals)){
-        val <- TRUE
-      } else if (sum(allowed_vals == FALSE) == length(allowed_vals)){
-        val <- FALSE
-      } else{
-        val <- "MAYBE"
-      }
-
-      # this just groups the rows so I can combine the reason
-      updated <- new_df |>
-        dplyr::group_by(parcel_id) |>
-        dplyr::summarise(allowed = val,
-                         reason = paste(reason,collapse = " ---||--- "))
-
-      new_reason <- updated$reason
-
-      # make a new df with just one row for the parcel_id
-      updated_df <- new_df[1,]
-      updated_df[1,"allowed"] <- as.character(val)
-      updated_df[1,"reason"] <- new_reason
-      # add that df to a list of the combined parcel_id dfs
-      new_dfs[[i]] <- updated_df
-
-    }
-
-    # make one df out of all the combined parcel_id dfs
-    combined_duplicates <- dplyr::bind_rows(new_dfs)
-
-    # take out the old duplicated parcel_id rows
-    final_df <- final_df |>
-      dplyr::filter(!parcel_id %in% duplicates)
-
-    # add the new combined parcel_id rows
-    final_df <- rbind(final_df, combined_duplicates)
+    # # loop through each duplicated parcel_id
+    # new_dfs <- list()
+    # length(new_dfs) <- length(duplicates)
+    # for (i in 1:length(duplicates)){
+    #   id <- duplicates[[i]]
+    #
+    #   # filter to just the first duplicate ids
+    #   new_df <- final_df |>
+    #     dplyr::filter(parcel_id == id)
+    #
+    #   # make a vector of all the allowed values
+    #   allowed_vals <- new_df$allowed
+    #
+    #   # if all duplicates are TRUE, then it is still TRUE
+    #   # if all duplicates are FALSE, then it is still FALSE
+    #   # if any other combination, it is MABYE
+    #   if (sum(allowed_vals == TRUE) == length(allowed_vals)){
+    #     val <- TRUE
+    #   } else if (sum(allowed_vals == FALSE) == length(allowed_vals)){
+    #     val <- FALSE
+    #   } else{
+    #     val <- "MAYBE"
+    #   }
+    #
+    #   # this just groups the rows so I can combine the reason
+    #   updated <- new_df |>
+    #     dplyr::group_by(parcel_id) |>
+    #     dplyr::summarise(allowed = val,
+    #                      reason = paste(reason,collapse = " ---||--- "))
+    #
+    #   new_reason <- updated$reason
+    #
+    #   # make a new df with just one row for the parcel_id
+    #   updated_df <- new_df[1,]
+    #   updated_df[1,"allowed"] <- as.character(val)
+    #   updated_df[1,"reason"] <- new_reason
+    #   # add that df to a list of the combined parcel_id dfs
+    #   new_dfs[[i]] <- updated_df
+    #
+    # }
+    #
+    # # make one df out of all the combined parcel_id dfs
+    # combined_duplicates <- dplyr::bind_rows(new_dfs)
+    #
+    # # take out the old duplicated parcel_id rows
+    # final_df <- final_df |>
+    #   dplyr::filter(!parcel_id %in% duplicates)
+    #
+    # # add the new combined parcel_id rows
+    # final_df <- rbind(final_df, combined_duplicates)
   }
 
 
@@ -750,23 +799,31 @@ zr_run_zoning_checks <- function(bldg_file,
 
 }
 
-# final_df |>
-#   ggplot() +
-#   geom_sf(aes(color = allowed))
-#
-# bldg_file <- "inst/extdata/2_fam.bldg"
-# parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_parcels_to_test/"
-# zoning_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_to_test/"
-#
-# detailed_check <- TRUE
-# print_checkpoints <- TRUE
-# checks <- possible_checks
-# save_to <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/five_city_test_output.geojson"
-#
-# all_checks_but_bldg_fit <- zr_run_zoning_checks(bldg_file,
-#                                  parcel_files,
-#                                  zoning_files,
-#                                  detailed_check,
-#                                  print_checkpoints,
-#                                  checks,
-#                                  save_to)
+final_df |>
+  ggplot() +
+  geom_sf(aes(color = allowed))
+
+bldg_file <- "inst/extdata/2_fam.bldg"
+parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_parcels_to_test/"
+zoning_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_to_test/"
+
+parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_parcels_to_test/University Park.parcel"
+zoning_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_to_test/University Park.zoning"
+
+detailed_check <- FALSE
+print_checkpoints <- TRUE
+checks <- "res_type"
+# save_to <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/testing_zoning_output.geojson"
+
+all_checks_but_bldg_fit <- zr_run_zoning_checks(bldg_file,
+                                 parcel_files,
+                                 zoning_files,
+                                 detailed_check,
+                                 print_checkpoints,
+                                 checks,
+                                 save_to)
+
+all_checks_but_bldg_fit |>
+  ggplot() +
+  geom_sf(aes(color = allowed))
+
