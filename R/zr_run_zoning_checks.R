@@ -247,13 +247,6 @@ zr_run_zoning_checks <- function(bldg_file,
   # use the overlay districts to add zoning_id to parcel_dims
   parcels_overlays <- zr_find_district_idx(parcel_dims, overlays, "overlay_id")
 
-  # find which parcels don't have a zoning district covering them
-  parcels_not_covered <- parcel_dims$parcel_id[is.na(parcel_dims$zoning_id)]
-
-  if (length(parcels_not_covered) > 0){
-    warning(paste(length(parcels_not_covered),"/",nrow(parcel_dims),"parcels not covered by a base district. Excluded from analysis"))
-  }
-
   zoning_is_na <- parcel_dims$zoning_id |>
     unique() |>
     is.na()
@@ -270,7 +263,6 @@ zr_run_zoning_checks <- function(bldg_file,
   muni_name_vec <- zoning_sf$muni_name
 
   parcel_df <- parcel_dims |>
-    dplyr::filter(!is.na(zoning_id)) |>
     dplyr::mutate(false_reasons = as.character(NA),
                   maybe_reasons = as.character(NA))
 
@@ -335,10 +327,23 @@ zr_run_zoning_checks <- function(bldg_file,
       cat(ifelse(time_lapsed > 60,
                  paste0("___planned_dev_check___(",round(time_lapsed / 60,2), " min)\n"),
                  paste0("___planned_dev_check___(",round(time_lapsed,1), " sec)\n")))
-      cat(paste(length(parcel_df$zoning_id[parcel_df$check_pd == TRUE]),"parcels in planned developement district\n\n"))
+      cat(paste(length(pd_parcels),"parcels in planned developement district\n\n"))
     }
 
   }
+
+
+  # GETTING RID OF NA PARCELS #
+  # find which parcels don't have a zoning district covering them
+  parcels_not_covered <- parcel_df$parcel_id[is.na(parcel_df$zoning_id)]
+
+  if (length(parcels_not_covered) > 0){
+    warning(paste(length(parcels_not_covered),"/",nrow(parcel_df),"parcels not covered by a base district. Excluded from analysis"))
+  }
+
+  # get rid of parcels that don't have a base district
+  parcel_df <- parcel_df |>
+    dplyr::filter(!is.na(zoning_id))
 
   # GET ZONING REQUIREMENTS AND VARIABLES
   # this loop also creates a vector of parcels with not setback info to be used later
@@ -799,31 +804,25 @@ zr_run_zoning_checks <- function(bldg_file,
 
 }
 
-final_df |>
-  ggplot() +
-  geom_sf(aes(color = allowed))
-
-bldg_file <- "inst/extdata/2_fam.bldg"
-parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_parcels_to_test/"
-zoning_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_to_test/"
-
-parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_parcels_to_test/University Park.parcel"
-zoning_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_to_test/University Park.zoning"
-
-detailed_check <- FALSE
-print_checkpoints <- TRUE
-checks <- "res_type"
-# save_to <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/testing_zoning_output.geojson"
-
-all_checks_but_bldg_fit <- zr_run_zoning_checks(bldg_file,
-                                 parcel_files,
-                                 zoning_files,
-                                 detailed_check,
-                                 print_checkpoints,
-                                 checks,
-                                 save_to)
-
-all_checks_but_bldg_fit |>
-  ggplot() +
-  geom_sf(aes(color = allowed))
-
+# final_df |>
+#   ggplot2::ggplot() +
+#   ggplot2::geom_sf(ggplot2::aes(color = allowed))
+#
+# bldg_file <- "inst/extdata/2_fam.bldg"
+# parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_parcels_to_test/"
+# zoning_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_to_test/"
+#
+# detailed_check <- FALSE
+# print_checkpoints <- TRUE
+# checks <- "res_type"
+# # save_to <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/testing_zoning_output.geojson"
+#
+# all_checks_but_bldg_fit <- zr_run_zoning_checks(bldg_file,
+#                                  parcel_files,
+#                                  zoning_files,
+#                                  detailed_check,
+#                                  print_checkpoints,
+#                                  checks,
+#                                  save_to)
+#
+#
