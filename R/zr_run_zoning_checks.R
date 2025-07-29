@@ -158,10 +158,13 @@ zr_run_zoning_checks <- function(bldg_file,
     zoning_data_muni_name <- zoning_data_from_json$muni_name
 
     # get rid of empty geometries and add a muni_id and muni_name to the zoning df
-    zone_sf <- sf::st_read(file, quiet = TRUE) |>
-      dplyr::filter(!sf::st_is_empty(geometry)) |>
-      dplyr::mutate(muni_id = zoning_files_num,
-                    muni_name = zoning_data_muni_name)
+
+    suppressWarnings(
+      zone_sf <- sf::st_read(file, quiet = TRUE) |>
+        dplyr::filter(!sf::st_is_empty(geometry)) |>
+        dplyr::mutate(muni_id = zoning_files_num,
+                      muni_name = zoning_data_muni_name)
+    )
 
     # make res_types_allowed a list so that it will bind properly
     zone_sf$res_types_allowed <- zone_sf$res_types_allowed |> as.list()
