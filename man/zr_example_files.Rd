@@ -19,3 +19,8 @@ zoneR has a few example OZFS files stored internally. \code{zr_example_files}
 returns either a list of names of the example files, or the file path
 of a specified file.
 }
+\examples{
+zr_example_files()
+zr_example_files("Paradise.parcel")
+
+}
