@@ -19,6 +19,7 @@
 #' |Possible Checks  |Type       |Reason Column Usage    |
 #' |:----------------|:----------|:----------------------|
 #' |PD_dist          |built in   |FALSE returned because parcel is in a planned development district|
+#' |PD_overlay       |built in   |FALSE returned because parcel is in a planned development overlay district|
 #' |side_lbl         |built in   |MAYBE returned because the parcel sides were not labeled and check_fit was not run|
 #' |res_type         |user input |Residential type check returned FALSE or MAYBE|
 #' |far              |user input |Floor Area Ratio check returned FALSE or MAYBE|
@@ -812,34 +813,34 @@ zr_run_zoning_checks <- function(bldg_file,
 
 }
 
-final_df |>
-  ggplot2::ggplot() +
-  ggplot2::geom_sf(ggplot2::aes(color = allowed))
-
-bldg_file <- "inst/extdata/2_fam.bldg"
-parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_parcels_to_test_geojson/"
-zoning_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_to_test_geojson/"
-
-zoning_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/ozfs_edited/Farmers Branch.zoning"
-parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/Dalworthington Gardens.parcel"
-
-parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_parcels_to_test/Dallas.parcel"
-zoning_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_to_test/Dallas.zoning"
-
-detailed_check <- FALSE
-print_checkpoints <- TRUE
-checks <- "res_type"
-save_to <- NULL
-# save_to <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/testing_zoning_output.geojson"
-
-all_checks_but_bldg_fit <- zr_run_zoning_checks(bldg_file,
-                                 parcel_files,
-                                 zoning_files,
-                                 detailed_check,
-                                 print_checkpoints,
-                                 checks,
-                                 save_to)
-all_checks_but_bldg_fit |>
-  dplyr::filter(is_duplicate == TRUE)
-
-unique(all_checks_but_bldg_fit$reason)
+# final_df |>
+#   ggplot2::ggplot() +
+#   ggplot2::geom_sf(ggplot2::aes(color = allowed))
+#
+# bldg_file <- "inst/extdata/2_fam.bldg"
+# parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_parcels_to_test/"
+# zoning_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_to_test/"
+#
+# # zoning_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/ozfs_edited/Farmers Branch.zoning"
+# # parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/Dalworthington Gardens.parcel"
+# #
+# # parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_parcels_to_test/Dallas.parcel"
+# # zoning_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_to_test/Dallas.zoning"
+#
+# detailed_check <- FALSE
+# print_checkpoints <- TRUE
+# checks <- possible_checks
+# save_to <- NULL
+# # save_to <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/testing_zoning_output.geojson"
+#
+# all_checks_but_bldg_fit <- zr_run_zoning_checks(bldg_file,
+#                                  parcel_files,
+#                                  zoning_files,
+#                                  detailed_check,
+#                                  print_checkpoints,
+#                                  checks,
+#                                  save_to)
+# all_checks_but_bldg_fit |>
+#   dplyr::filter(is_duplicate == TRUE)
+#
+# unique(all_checks_but_bldg_fit$reason)
