@@ -3,8 +3,9 @@ Type: Package
 Title: Zoning Code Analysis
 Version: 0.5.0
 Authors@R: c(
-    person("Kamryn", "Mansfield", email = "mansfieldkamryn@gmail.com", role = "aut"),
-    person("Carole", "Voulgaris", email = "cvoulgaris@gsd.harvard.edu", role = c("aut", "cre"))
+    person("Kamryn", "Mansfield", email = "mansfieldkamryn@gmail.com", role = c("ctb","aut"),
+    person("Carole", "Voulgaris", email = "cvoulgaris@gsd.harvard.edu", role = c("aut", "cre","ctb"),
+    person("Houpu", "Li", role = c("ctb","aut"))
     )
 Maintainer: Kamryn Mansfield <mansfieldkamryn@gmail.com>
 Description: The zoneR package was built to analyze housing capacity
