@@ -49,10 +49,6 @@ zr_add_setbacks <- function(parcel_geo, district_data, zoning_req){
     }
   }
 
-  if (!is.null(warning_vec)){
-    warning("No side label. Setbacks not considered.")
-  }
-
   parcel_geo$setback <- I(setback_value)
 
   ## EVERYTHING BELOW HAS BEEN ADDED TO ACCOMODATE EXTRA SETBACK RULES ##
