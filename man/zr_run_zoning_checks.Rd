@@ -62,6 +62,7 @@ The table below specifies what each check means when it is part of the "reason"
 column.\tabular{lll}{
    Possible Checks \tab Type \tab Reason Column Usage \cr
    PD_dist \tab built in \tab FALSE returned because parcel is in a planned development district \cr
+   PD_overlay \tab built in \tab FALSE returned because parcel is in a planned development overlay district \cr
    side_lbl \tab built in \tab MAYBE returned because the parcel sides were not labeled and check_fit was not run \cr
    res_type \tab user input \tab Residential type check returned FALSE or MAYBE \cr
    far \tab user input \tab Floor Area Ratio check returned FALSE or MAYBE \cr
