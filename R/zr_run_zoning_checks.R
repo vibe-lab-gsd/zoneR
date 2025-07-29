@@ -183,6 +183,10 @@ zr_run_zoning_checks <- function(bldg_file,
   zoning_sf <- zoning_all_sf |>
     dplyr::filter(overlay == FALSE) |>
     dplyr::filter(planned_dev == FALSE)
+  # this is just the base districts and base pd districts if they exist
+  # it is how we assign the dist_name and dist_abbr to the results df
+  zoning_sf_for_names <- zoning_all_sf |>
+    dplyr::filter(overlay == FALSE)
 
   # get appropriate crs in meters to use in the check footprint function
   crs <- zr_get_crs(zoning_sf)
@@ -199,8 +203,6 @@ zr_run_zoning_checks <- function(bldg_file,
 
   parcel_geo <- zr_get_parcel_geo(combined_parcel_files) # parcels with side labels
   parcel_dims <- zr_get_parcel_dims(combined_parcel_files) # parcels with centroid and dimensions
-
-  # og_parcel_dims <- parcel_dims
 
   # check for parcel duplicates and update as necessary
   dups <- which(duplicated(parcel_dims$parcel_id) | duplicated(parcel_dims$parcel_id, fromLast = TRUE))
@@ -259,8 +261,8 @@ zr_run_zoning_checks <- function(bldg_file,
   # filter it to only the parcels that have a base district
   # add the muni_name and dist_abbr
   # this parcel_df is what we will use for most of the calculations
-  dist_abbr_vec <- zoning_sf$dist_abbr
-  muni_name_vec <- zoning_sf$muni_name
+  dist_abbr_vec <- zoning_sf_for_names$dist_abbr
+  muni_name_vec <- zoning_sf_for_names$muni_name
 
   parcel_df <- parcel_dims |>
     dplyr::mutate(false_reasons = as.character(NA),
@@ -268,7 +270,6 @@ zr_run_zoning_checks <- function(bldg_file,
 
   parcel_df$muni_name <- muni_name_vec[parcel_df$zoning_id]
   parcel_df$dist_abbr <- dist_abbr_vec[parcel_df$zoning_id]
-
 
   # start a list that will store the false data frames of the check functions
   false_df <- list()
@@ -293,13 +294,17 @@ zr_run_zoning_checks <- function(bldg_file,
     # make a new df with the pd district indexes
     pd_parcel_df <- pd_parcel_df |>
       dplyr::filter(!is.na(pd_id))
-
+    # get the unique parcel names that are in pd districts
     pd_parcels <- unique(pd_parcel_df$parcel_id)
+
+    # get the parcel names of the ones in pd_overlays
+    pd_parcel_overlay_df <- pd_parcel_df[pd_parcel_df$pd_id %in% pd_overlay_idx,]
+    pd_parcels_overlay <- unique(pd_parcel_overlay_df$parcel_id)
 
     if (length(pd_overlay_idx) > 0){
       parcel_df <- parcel_df |>
         dplyr::mutate(check_pd = ifelse(parcel_id %in% pd_parcels, FALSE, TRUE),
-                      false_reasons = ifelse(zoning_id %in% pd_overlay_idx, ifelse(!is.na(false_reasons),paste(false_reasons, "PD_overlay", sep = ", "),"PD_overlay"),
+                      false_reasons = ifelse(parcel_id %in% pd_parcels_overlay, ifelse(!is.na(false_reasons),paste(false_reasons, "PD_overlay", sep = ", "),"PD_overlay"),
                                              ifelse(parcel_id %in% pd_parcels, ifelse(!is.na(false_reasons),paste(false_reasons, "PD_dist", sep = ", "),"PD_dist"), false_reasons)))
     } else{
       parcel_df <- parcel_df |>
@@ -812,9 +817,16 @@ zr_run_zoning_checks <- function(bldg_file,
 # parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_parcels_to_test/"
 # zoning_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_to_test/"
 #
-# detailed_check <- FALSE
+# zoning_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/ozfs_edited/Dalworthington Gardens.zoning"
+# parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/Dalworthington Gardens.parcel"
+#
+# parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_parcels_to_test/"
+# zoning_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_to_test/"
+#
+# detailed_check <- TRUE
 # print_checkpoints <- TRUE
 # checks <- "res_type"
+# save_to <- NULL
 # # save_to <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/testing_zoning_output.geojson"
 #
 # all_checks_but_bldg_fit <- zr_run_zoning_checks(bldg_file,
@@ -824,5 +836,7 @@ zr_run_zoning_checks <- function(bldg_file,
 #                                  print_checkpoints,
 #                                  checks,
 #                                  save_to)
+# all_checks_but_bldg_fit |>
+#   dplyr::filter(is_duplicate == TRUE)
 #
-#
+# unique(all_checks_but_bldg_fit$reason)
