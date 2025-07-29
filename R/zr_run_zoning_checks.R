@@ -689,7 +689,7 @@ zr_run_zoning_checks <- function(bldg_file,
 
   if (length(duplicates) > 0){
 
-    warning(paste(length(duplicates),"parcels are covered by multiple base districts.\nRefer to the is_duplicate column in results."))
+    warning(paste(length(duplicates),"parcels are covered by multiple base districts and are duplicated in results to account for each of those base districts. (see is_duplicate column)"))
 
     final_df$is_duplicate[duplicated(final_df$parcel_id) | duplicated(final_df$parcel_id, fromLast = TRUE)] <- TRUE
     final_df$is_duplicate[is.na(final_df$is_duplicate)] <- FALSE
@@ -820,10 +820,10 @@ zr_run_zoning_checks <- function(bldg_file,
 # zoning_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/ozfs_edited/Dalworthington Gardens.zoning"
 # parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/Dalworthington Gardens.parcel"
 #
-# parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_parcels_to_test/"
-# zoning_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_to_test/"
+# parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_parcels_to_test/Dallas.parcel"
+# zoning_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_to_test/Dallas.zoning"
 #
-# detailed_check <- TRUE
+# detailed_check <- FALSE
 # print_checkpoints <- TRUE
 # checks <- "res_type"
 # save_to <- NULL
