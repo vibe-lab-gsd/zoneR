@@ -49,7 +49,7 @@ crs for the input geometry</p>
 
 <dl><dt id="arg-geom-data">geom_data<a class="anchor" aria-label="anchor" href="#arg-geom-data"></a></dt>
 <dd><p>Either a simple feature collection or a
-file path to a <code>.geojson</code> file.</p></dd>
+path to a file containing geospatial data</p></dd>
 
 
 <dt id="arg-large-area">large_area<a class="anchor" aria-label="anchor" href="#arg-large-area"></a></dt>
@@ -60,7 +60,7 @@ find the state plane that covers it the best</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>The appropriate epsg code as an integer</p>
+    <p>Returns the appropriate epsg code as an integer</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -68,6 +68,13 @@ find the state plane that covers it the best</p></dd>
 and the <a href="https://epsg.io/" class="external-link">epsg.io</a> website.</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">file</span> <span class="op">&lt;-</span> <span class="fu"><a href="zr_example_files.html">zr_example_files</a></span><span class="op">(</span><span class="st">"Paradise.zoning"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">zr_get_crs</span><span class="op">(</span><span class="va">file</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 32138</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 
