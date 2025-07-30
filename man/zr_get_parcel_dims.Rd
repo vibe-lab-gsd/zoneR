@@ -2,16 +2,38 @@
 % Please edit documentation in R/zr_get_parcel_dims.R
 \name{zr_get_parcel_dims}
 \alias{zr_get_parcel_dims}
-\title{Isolate dimensional rows from tidyparcel data}
+\title{Isolate dimensional rows from OZFS parcel data}
 \usage{
 zr_get_parcel_dims(parcels_file)
 }
 \arguments{
-\item{parcels_file}{Either a file path to the a parcels geojson file or an sf object with the same data.}
+\item{parcels_file}{Either a file path to an OZFS \code{.parcel} file or a
+simple features object with the same data.}
 }
 \value{
-an sf object with only dimensional and centroid data for each parcel
+Returns a simple features object with only dimensional and centroid
+data for each parcel. It also adds a lot_type column specifying whether or
+not it is a corner parcel.
 }
 \description{
-Isolate dimensional rows from tidyparcel data
+\code{zr_get_parcel_dims()} takes the data in the \code{.parcel} file and creates a
+simple features data frame with only the geometry representing the parcel centroids.
+The data frame contains the dimensional information related to each parcel.
+}
+\section{Parcel File}{
+
+According to OZFS, the \code{.parcel} file follows geojson format with geometry for
+each feature. The features with parcel side geometry store information on the
+parcel id and the side label. The features with parcel centroid geometry store
+parcel id information along with the parcel's width, depth, and area.
+\code{zr_get_parcel_geo()} filters this data into a data frame that just has side
+geometries and labels. \code{zr_get_parcel_dims()} filters this data into a data frame
+that only has centroid geometries and the dimensional information.
+}
+
+\examples{
+file <- zr_example_files("Paradise.parcel")
+
+parcel_dims <- zr_get_parcel_dims(file)
+head(parcel_dims)
 }

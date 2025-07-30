@@ -1,11 +1,31 @@
-#' Isolate dimensional rows from tidyparcel data
+#' Isolate dimensional rows from OZFS parcel data
 #'
-#' @param parcels_file Either a file path to the a parcels geojson file or an sf object with the same data.
+#' `zr_get_parcel_dims()` takes the data in the `.parcel` file and creates a
+#' simple features data frame with only the geometry representing the parcel centroids.
+#' The data frame contains the dimensional information related to each parcel.
 #'
-#' @returns an sf object with only dimensional and centroid data for each parcel
+#' @section Parcel File:
+#' According to OZFS, the `.parcel` file follows geojson format with geometry for
+#' each feature. The features with parcel side geometry store information on the
+#' parcel id and the side label. The features with parcel centroid geometry store
+#' parcel id information along with the parcel's width, depth, and area.
+#' `zr_get_parcel_geo()` filters this data into a data frame that just has side
+#' geometries and labels. `zr_get_parcel_dims()` filters this data into a data frame
+#' that only has centroid geometries and the dimensional information.
+#'
+#' @param parcels_file Either a file path to an OZFS `.parcel` file or a
+#' simple features object with the same data.
+#'
+#' @returns Returns a simple features object with only dimensional and centroid
+#' data for each parcel. It also adds a lot_type column specifying whether or
+#' not it is a corner parcel.
 #' @export
 #'
 #' @examples
+#' file <- zr_example_files("Paradise.parcel")
+#'
+#' parcel_dims <- zr_get_parcel_dims(file)
+#' head(parcel_dims)
 zr_get_parcel_dims <- function(parcels_file){
   if (inherits(parcels_file, "character")){ # then it is a file path
     parcels_sf <- tryCatch({

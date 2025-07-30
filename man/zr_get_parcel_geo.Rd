@@ -2,16 +2,41 @@
 % Please edit documentation in R/zr_get_parcel_geo.R
 \name{zr_get_parcel_geo}
 \alias{zr_get_parcel_geo}
-\title{Isolate known side geometry from tidyparcel data}
+\title{Isolate side geometry from OZFS parcel data frame}
 \usage{
 zr_get_parcel_geo(parcels_file)
 }
 \arguments{
-\item{parcels_file}{Either a file path to the a parcels geojson file or an sf object with the same data.}
+\item{parcels_file}{Either a file path to an OZFS \code{.parcel} file
+or a simple features object with the same data.}
 }
 \value{
-an sf object with only the side geometries of the parcels with identified sides
+Returns a simple features object with only the side geometries
+of the parcels.
 }
 \description{
-Isolate known side geometry from tidyparcel data
+\code{zr_get_parcel_geo()} takes the data in the \code{.parcel} file and creates a
+simple features data frame with only the geometry representing the parcel sides.
+}
+\section{Parcel File}{
+
+According to OZFS, the \code{.parcel} file follows geojson format with geometry for
+each feature. The features with parcel side geometry store information on the
+parcel id and the side label. The features with parcel centroid geometry store
+parcel id information along with the parcel's width, depth, and area.
+\code{zr_get_parcel_geo()} filters this data into a data frame that just has side
+geometries and labels. \code{zr_get_parcel_dims()} filters this data into a data frame
+that only has centroid geometries and the dimensional information.
+}
+
+\examples{
+file <- zr_example_files("Paradise.parcel")
+
+parcel_geo <- zr_get_parcel_geo(file)
+
+# parcels with unknown side lables
+head(parcel_geo)
+
+# parcels with labeled sides
+tail(parcel_geo)
 }

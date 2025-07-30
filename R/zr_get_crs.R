@@ -8,15 +8,17 @@
 #' and the [epsg.io](https://epsg.io/) website.
 #'
 #' @param geom_data Either a simple feature collection or a
-#' file path to a `.geojson` file.
+#' path to a file containing geospatial data
 #' @param large_area Set this to `TRUE` if your data may
 #' cross multiple state planes. It will be a bit longer but
 #' find the state plane that covers it the best
 #'
-#' @returns The appropriate epsg code as an integer
+#' @returns Returns the appropriate epsg code as an integer
 #' @export
 #'
 #' @examples
+#' file <- zr_example_files("Paradise.zoning")
+#' zr_get_crs(file)
 zr_get_crs <- function(geom_data, large_area = FALSE){
 
   # find out what type of data was input

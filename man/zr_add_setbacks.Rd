@@ -2,7 +2,7 @@
 % Please edit documentation in R/zr_add_setbacks.R
 \name{zr_add_setbacks}
 \alias{zr_add_setbacks}
-\title{Add setback column to the parcel_geo data frame}
+\title{Add setback column to a parcel_geo data frame}
 \usage{
 zr_add_setbacks(parcel_geo, district_data, zoning_req)
 }
@@ -20,6 +20,6 @@ A district_data object is one row from a zoning simple features object.}
 Returns the parcel_geo data frame with a "setbacks" column added to the end.
 }
 \description{
-\code{zr_add_setbacks()} returns the parcel_geo data frame with a new column
+\code{zr_add_setbacks()} returns a parcel_geo data frame with a new column
 containing setback values
 }
