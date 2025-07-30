@@ -12,43 +12,8 @@
 #' `checks` argument.
 #'
 #' The resulting data frame of `zr_run_zoning_checks()` will have a "reason" column with
-#' the names of any checks that caused a FALSE or a MAYBE building allowance.
-#' The table below specifies what each check means when it is part of the "reason"
-#' column.
-#'
-#' |Possible Checks  |Type       |Reason Column Usage    |
-#' |:----------------|:----------|:----------------------|
-#' |PD_dist          |built in   |FALSE returned because parcel is in a planned development district|
-#' |PD_overlay       |built in   |FALSE returned because parcel is in a planned development overlay district|
-#' |side_lbl         |built in   |MAYBE returned because the parcel sides were not labeled and check_fit was not run|
-#' |res_type         |user input |Residential type check returned FALSE or MAYBE|
-#' |far              |user input |Floor Area Ratio check returned FALSE or MAYBE|
-#' |fl_area          |user input |Floor area check returned FALSE or MAYBE|
-#' |fl_area_first    |user input |Area of first floor check returned FALSE or MAYBE|
-#' |fl_area_top      |user input |Area of top floor check returned FALSE or MAYBE|
-#' |footprint        |user input |Footprint check returned FALSE or MAYBE|
-#' |height           |user input |Height check returned FALSE or MAYBE|
-#' |height_eave      |user input |Height eave check returned FALSE or MAYBE|
-#' |lot_cov_bldg     |user input |Lot coverage check returned FALSE or MAYBE|
-#' |lot_area         |user input |Lot area check returned FALSE or MAYBE|
-#' |parking_enclosed |user input |Enclosed parking check returned FALSE or MAYBE|
-#' |stories          |user input |Stories check returned FALSE or MAYBE|
-#' |unit_0bed        |user input |0-bed unit quantity check returned FALSE or MAYBE|
-#' |unit_1bed        |user input |1-bed unit quantity check returned FALSE or MAYBE|
-#' |unit_2bed        |user input |2-bed unit quantity check returned FALSE or MAYBE|
-#' |unit_3bed        |user input |3-bed unit quantity check returned FALSE or MAYBE|
-#' |unit_4bed        |user input |4plus-bed unit quantity check returned FALSE or MAYBE|
-#' |unit_density     |user input |Unit density check returned FALSE or MAYBE|
-#' |unit_pct_0bed    |user input |Percent 0-bed units check returned FALSE or MAYBE|
-#' |unit_pct_1bed    |user input |Percent 1-bed units check returned FALSE or MAYBE|
-#' |unit_pct_2bed    |user input |Percent 2-bed units check returned FALSE or MAYBE|
-#' |unit_pct_3bed    |user input |Percent 3-bed units check returned FALSE or MAYBE|
-#' |unit_pct_4bed    |user input |Percent 4plus-bed units check returned FALSE or MAYBE|
-#' |total_units      |user input |Total units check returned FALSE or MAYBE|
-#' |unit_size_avg    |user input |Average unit size check returned FALSE or MAYBE|
-#' |unit_size        |user input |Unit size check returned FALSE or MAYBE|
-#' |bldg_fit         |user input |Building fit check returned FALSE or MAYBE|
-#' |overlay          |user input |MAYBE returned because parcel is in an overlay district|
+#' the names of any checks that caused a FALSE or a MAYBE building allowance. For
+#' more details on what the reasons column means, see the package data `reasons`.
 #'
 #'
 #' @param bldg_file The path to the OZFS *.bldg
