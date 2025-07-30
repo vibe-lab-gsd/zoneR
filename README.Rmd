@@ -240,7 +240,7 @@ constraint is the least restrictive for the given building.
 
 ## Inside the zr_run_zoning_checks()
 Most of the functions in zoneR were created for `zr_run_zoning_checks()`, but
-they can be use by themselves if desired. Below are some of the main variables that 
+they can be used by themselves if desired. Below are some of the main variables that 
 the different zoneR functions take in.
 
 -   **bldg_data:** The `.bldg` file read in as a list using

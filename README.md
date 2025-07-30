@@ -45,6 +45,7 @@ We get the file paths for the example OZFS files using
 
 ``` r
 library(zoneR)
+#> None of the results of any of the functions in this package are legal advice. We do not guarantee any of it. You should definitely talk to an actual professional of some kind before you start building anything.
 
 bldg_path <- zr_example_files("2_fam.bldg")
 parcel_path <- zr_example_files("Paradise.parcel")
@@ -58,18 +59,18 @@ function and assign the result to a variable called zoning_checks.
 zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
                                       parcel_files = parcel_path,
                                       zoning_files = zoning_path)
-#> ___data_prep___(0.4 sec)
+#> ___data_prep___(0.7 sec)
 #> 
-#> ___get_zoning_req___(0.9 sec)
+#> ___get_zoning_req___(1 sec)
 #> 
 #> ___initial_checks___(0.5 sec)
 #> 21 parcels are TRUE or MAYBE
 #> 
-#> ___bldg_fit___(28.6 sec)
+#> ___bldg_fit___(35.3 sec)
 #> 9 parcels are TRUE or MAYBE
 #> 
 #> _____summary_____
-#> total runtime: 30.3 sec (0.51 min)
+#> total runtime: 37.6 sec (0.63 min)
 #> 0 / 421 parcels allow the building
 #> 11 / 421 parcels might allow the building
 ```
@@ -80,25 +81,25 @@ that the geometry is the centroid of the parcel.
 
 ``` r
 head(zoning_checks)
-#> Simple feature collection with 6 features and 3 fields
+#> Simple feature collection with 6 features and 5 fields
 #> Geometry type: POINT
 #> Dimension:     XY
 #> Bounding box:  xmin: -97.69917 ymin: 33.1448 xmax: -97.69153 ymax: 33.15607
 #> Geodetic CRS:  WGS 84
-#>                           parcel_id allowed                         reason
-#> 1     Wise_County_combined_parcel_1   FALSE               res_type, height
-#> 2 Wise_County_combined_parcel_10300   FALSE               res_type, height
-#> 3 Wise_County_combined_parcel_10450   FALSE               res_type, height
-#> 4 Wise_County_combined_parcel_10451   FALSE res_type, height, unit_density
-#> 5 Wise_County_combined_parcel_10452   FALSE res_type, height, unit_density
-#> 6 Wise_County_combined_parcel_10464   FALSE               res_type, height
-#>                     geometry
-#> 1 POINT (-97.69524 33.14755)
-#> 2 POINT (-97.69382 33.15607)
-#> 3  POINT (-97.69415 33.1448)
-#> 4 POINT (-97.69156 33.14562)
-#> 5 POINT (-97.69153 33.14699)
-#> 6 POINT (-97.69917 33.15142)
+#>                           parcel_id muni_name dist_abbr allowed
+#> 1     Wise_County_combined_parcel_1  Paradise       R-1   FALSE
+#> 2 Wise_County_combined_parcel_10300  Paradise       R-1   FALSE
+#> 3 Wise_County_combined_parcel_10450  Paradise       R-1   FALSE
+#> 4 Wise_County_combined_parcel_10451  Paradise       R-1   FALSE
+#> 5 Wise_County_combined_parcel_10452  Paradise       R-1   FALSE
+#> 6 Wise_County_combined_parcel_10464  Paradise       R-1   FALSE
+#>                           reason                   geometry
+#> 1               res_type, height POINT (-97.69524 33.14755)
+#> 2               res_type, height POINT (-97.69382 33.15607)
+#> 3               res_type, height  POINT (-97.69415 33.1448)
+#> 4 res_type, height, unit_density POINT (-97.69156 33.14562)
+#> 5 res_type, height, unit_density POINT (-97.69153 33.14699)
+#> 6               res_type, height POINT (-97.69917 33.15142)
 ```
 
 The graph below is a visualization of the results.
@@ -119,7 +120,7 @@ zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
                                       checks = "res_type",
                                       print_checkpoints = FALSE)
 #> zoning checks finished
-#> total runtime: 1.3 sec (0.02 min)
+#> total runtime: 1.8 sec (0.03 min)
 ```
 
 Now we can see that only a few of the parcels are in a district that
@@ -138,7 +139,7 @@ zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
                                       checks = "height",
                                       print_checkpoints = FALSE)
 #> zoning checks finished
-#> total runtime: 1.4 sec (0.02 min)
+#> total runtime: 1.9 sec (0.03 min)
 ```
 
 <img src="man/figures/README-unnamed-chunk-10-1.png" width="100%" />
@@ -152,7 +153,7 @@ zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
                                       checks = "bldg_fit",
                                       print_checkpoints = FALSE)
 #> zoning checks finished
-#> total runtime: 96.8 sec (1.61 min)
+#> total runtime: 131.3 sec (2.19 min)
 ```
 
 <img src="man/figures/README-unnamed-chunk-12-1.png" width="100%" />
@@ -175,18 +176,18 @@ zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
                                       parcel_files = parcel_path,
                                       zoning_files = zoning_path,
                                       detailed_check = TRUE)
-#> ___data_prep___(0.2 sec)
+#> ___data_prep___(0.3 sec)
 #> 
-#> ___get_zoning_req___(1 sec)
+#> ___get_zoning_req___(3 sec)
 #> 
-#> ___initial_checks___(0.5 sec)
+#> ___initial_checks___(1.5 sec)
 #> 21 parcels are TRUE or MAYBE
 #> 
-#> ___bldg_fit___(1.57 min)
+#> ___bldg_fit___(2.47 min)
 #> 221 parcels are TRUE or MAYBE
 #> 
 #> _____summary_____
-#> total runtime: 96 sec (1.6 min)
+#> total runtime: 152.8 sec (2.55 min)
 #> 0 / 421 parcels allow the building
 #> 11 / 421 parcels might allow the building
 ```
@@ -202,6 +203,8 @@ ordered_sums <- column_true_sums[order(column_true_sums)]
 
 | constraint_check | parcels_true |
 |:-----------------|-------------:|
+| muni_name        |            0 |
+| dist_abbr        |            0 |
 | res_type         |           24 |
 | height           |           97 |
 | bldg_fit         |          208 |
@@ -209,7 +212,6 @@ ordered_sums <- column_true_sums[order(column_true_sums)]
 | unit_density     |          297 |
 | stories          |          397 |
 | lot_cov_bldg     |          418 |
-| district_check   |          421 |
 | unit_size        |          421 |
 
 It appears the res_type constraint is the most restrictive and the
@@ -218,7 +220,7 @@ unit_size constraint is the least restrictive for the given building.
 ## Inside the zr_run_zoning_checks()
 
 Most of the functions in zoneR were created for
-`zr_run_zoning_checks()`, but they can be use by themselves if desired.
+`zr_run_zoning_checks()`, but they can be used by themselves if desired.
 Below are some of the main variables that the different zoneR functions
 take in.
 
