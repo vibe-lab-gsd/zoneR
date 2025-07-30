@@ -182,15 +182,11 @@ zr_run_zoning_checks <- function(bldg_file,
   # get just the pd_districts with geometry
   pd_districts <- zoning_all_sf |>
     dplyr::filter(planned_dev == TRUE)
-  # get just the base districts with geometry
+  # get just the base districts with geometry note some base districts will be PD districts
   # this is the one I will use for most of the checks
   zoning_sf <- zoning_all_sf |>
-    dplyr::filter(overlay == FALSE) |>
-    dplyr::filter(planned_dev == FALSE)
-  # this is just the base districts and base pd districts if they exist
-  # it is how we assign the dist_name and dist_abbr to the results df
-  zoning_sf_for_names <- zoning_all_sf |>
     dplyr::filter(overlay == FALSE)
+
 
   # get appropriate crs in meters to use in the check footprint function
   crs <- zr_get_crs(zoning_sf)
@@ -265,8 +261,8 @@ zr_run_zoning_checks <- function(bldg_file,
   # filter it to only the parcels that have a base district
   # add the muni_name and dist_abbr
   # this parcel_df is what we will use for most of the calculations
-  dist_abbr_vec <- zoning_sf_for_names$dist_abbr
-  muni_name_vec <- zoning_sf_for_names$muni_name
+  dist_abbr_vec <- zoning_sf$dist_abbr
+  muni_name_vec <- zoning_sf$muni_name
 
   parcel_df <- parcel_dims |>
     dplyr::mutate(false_reasons = as.character(NA),
@@ -274,6 +270,19 @@ zr_run_zoning_checks <- function(bldg_file,
 
   parcel_df$muni_name <- muni_name_vec[parcel_df$zoning_id]
   parcel_df$dist_abbr <- dist_abbr_vec[parcel_df$zoning_id]
+
+
+  # GETTING RID OF NA PARCELS #
+  # find which parcels don't have a zoning district covering them
+  parcels_not_covered <- parcel_df$parcel_id[is.na(parcel_df$zoning_id)]
+
+  if (length(parcels_not_covered) > 0){
+    warning(paste(length(parcels_not_covered),"/",nrow(parcel_df),"parcels not covered by a base district. Excluded from analysis"))
+  }
+
+  # get rid of parcels that don't have a base district
+  parcel_df <- parcel_df |>
+    dplyr::filter(!is.na(zoning_id))
 
   # start a list that will store the false data frames of the check functions
   false_df <- list()
@@ -341,18 +350,6 @@ zr_run_zoning_checks <- function(bldg_file,
 
   }
 
-
-  # GETTING RID OF NA PARCELS #
-  # find which parcels don't have a zoning district covering them
-  parcels_not_covered <- parcel_df$parcel_id[is.na(parcel_df$zoning_id)]
-
-  if (length(parcels_not_covered) > 0){
-    warning(paste(length(parcels_not_covered),"/",nrow(parcel_df),"parcels not covered by a base district. Excluded from analysis"))
-  }
-
-  # get rid of parcels that don't have a base district
-  parcel_df <- parcel_df |>
-    dplyr::filter(!is.na(zoning_id))
 
   # GET ZONING REQUIREMENTS AND VARIABLES
   # this loop also creates a vector of parcels with not setback info to be used later
@@ -827,7 +824,7 @@ zr_run_zoning_checks <- function(bldg_file,
 # # parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_parcels_to_test/Dallas.parcel"
 # # zoning_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_to_test/Dallas.zoning"
 #
-# detailed_check <- FALSE
+# detailed_check <- TRUE
 # print_checkpoints <- TRUE
 # checks <- possible_checks
 # save_to <- NULL
@@ -840,7 +837,3 @@ zr_run_zoning_checks <- function(bldg_file,
 #                                  print_checkpoints,
 #                                  checks,
 #                                  save_to)
-# all_checks_but_bldg_fit |>
-#   dplyr::filter(is_duplicate == TRUE)
-#
-# unique(all_checks_but_bldg_fit$reason)

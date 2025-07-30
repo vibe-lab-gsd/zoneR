@@ -4,7 +4,7 @@ Title: Zoning Code Analysis
 Version: 0.5.0
 Authors@R: c(
     person("Kamryn", "Mansfield", email = "mansfieldkamryn@gmail.com", role = c("ctb","aut"), comment = c(ORCID = "0009-0003-5466-0821")),
-    person("Carole", "Voulgaris", email = "cvoulgaris@gsd.harvard.edu", role = c("aut", "cre","ctb")),
+    person("Carole", "Voulgaris", email = "cvoulgaris@gsd.harvard.edu", role = c("aut", "cre","ctb"), comment = c(ORCID = "0000-0003-0556-924X")),
     person("Houpu", "Li", role = c("ctb","aut"))
     )
 Maintainer: Kamryn Mansfield <mansfieldkamryn@gmail.com>
