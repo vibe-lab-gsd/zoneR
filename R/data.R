@@ -23,8 +23,8 @@
 #' This character vector lists all the possible constraints that can be
 #' checked in the `zr_run_zoning_checks()` functions
 #'
-#' @format
-#' A character vector
+#' @format A character vector of length 28.
+#' It contains the following values:
 #' c("res_type",
 #' "far",
 #' "fl_area",
@@ -53,6 +53,12 @@
 #' "unit_size",
 #' "bldg_fit",
 #' "overlay")
-#
+#' @source Generated internally by zoneR
 "possible_checks"
+
+#' Table of zoneR result's False and Maybe reasons
+#'
+#' This table describes what each name means when it is listed
+#' as a reason for a MAYBE or FALSE value in the building check.
+"false_maybe_reasons"
 
