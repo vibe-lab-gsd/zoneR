@@ -26,7 +26,7 @@ zr_get_crs <- function(geom_data, large_area = FALSE){
     geom <- geom_data
   } else if (inherits(geom_data, "character")){ # it might be a file path
     if (file.exists(geom_data)){ # it is a file path
-      geom <- sf::st_read(geom_data, quiet = TRUE)
+      geom <- suppressWarnings(sf::st_read(geom_data, quiet = TRUE))
     } else{
       stop("Input must be existing file or sf object")
     }
@@ -35,7 +35,14 @@ zr_get_crs <- function(geom_data, large_area = FALSE){
   }
 
   if (large_area == FALSE){
-    geom <- geom[1,]
+    geom <- geom |>
+      dplyr::filter(!sf::st_is_empty(geometry))
+
+    if (nrow(geom) == 0){
+      stop("No geometry found")
+    } else(
+      geom <- geom[1,]
+    )
   }
 
   intersections <- sf::st_intersects(sf::st_make_valid(geom), state_planes_crs)
