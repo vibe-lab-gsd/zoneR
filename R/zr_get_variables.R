@@ -60,7 +60,6 @@ zr_get_variables <- function(bldg_data, parcel_data, district_data, zoning_data)
   # assigning the values to variables
   bldg_depth <- bldg_json$bldg_info$depth
   bldg_width <- bldg_json$bldg_info$width
-  footprint <- bldg_width * bldg_depth
   dist_abbr <- district_data$dist_abbr
   fl_area <- sum(level_info_df$gross_fl_area)
   fl_area_first <- ifelse(length(level_info_df$gross_fl_area[level_info_df$level == 1]) == 1,
@@ -69,12 +68,16 @@ zr_get_variables <- function(bldg_data, parcel_data, district_data, zoning_data)
   fl_area_top <- ifelse(sum(level_info_df$level > 1) > 0,
                         level_info_df$gross_fl_area[level_info_df$level == max(level_info_df$level)],
                         0)
+  footprint <- fl_area_first
   stories <- max(level_info_df$level)
   height_deck <- ifelse(!is.null(bldg_json$bldg_info$height_deck),bldg_json$bldg_info$height_deck,bldg_json$bldg_info$height_top)
   height_eave <- ifelse(!is.null(bldg_json$bldg_info$height_eave),bldg_json$bldg_info$height_eave,bldg_json$bldg_info$height_top)
   height_plate <- bldg_json$bldg_info$height_plate
   height_top <- bldg_json$bldg_info$height_top
   height_tower <- ifelse(!is.null(bldg_json$bldg_info$height_tower),bldg_json$bldg_info$height_tower,0)
+  height_parapet <- ifelse(!is.null(bldg_json$bldg_info$height_parapet),bldg_json$bldg_info$height_parapet,height_top)
+  roof_pitch  <- ifelse(!is.null(bldg_json$bldg_info$roof_pitch),bldg_json$bldg_info$roof_pitch,0)
+  sep_wall_length <- ifelse(!is.null(bldg_json$bldg_info$sep_wall_length),bldg_json$bldg_info$sep_wall_length,0)
   lot_area <- parcel_data$lot_area
   lot_depth <- parcel_data$lot_depth
   lot_type <- parcel_data$lot_area
@@ -121,6 +124,9 @@ zr_get_variables <- function(bldg_data, parcel_data, district_data, zoning_data)
                         height_plate = height_plate,
                         height_top = height_top,
                         height_tower = height_tower,
+                        height_parapet = height_parapet,
+                        roof_pitch = roof_pitch,
+                        sep_wall_length = sep_wall_length,
                         lot_area = lot_area,
                         lot_depth = lot_depth,
                         lot_type = lot_type,
