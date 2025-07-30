@@ -7,7 +7,8 @@
         "depth": 48,
         "parking": 4,
         "sep_platting":false,
-        "unit_separation":"party_wall"
+        "unit_separation":"party_wall",
+        "sep_wall_length": 26
     },
     "unit_info": [
         {

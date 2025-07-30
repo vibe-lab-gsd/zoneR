@@ -6,7 +6,8 @@
         "width": 35,
         "depth": 40,
         "sep_platting":false,
-        "unit_separation":"party_wall"
+        "unit_separation":"party_wall",
+        "sep_wall_length": 40
     },
     "unit_info": [
         {
