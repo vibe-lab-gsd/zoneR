@@ -6,6 +6,7 @@
 <url><loc>https://vibe-lab-gsd.github.io/zoneR/index.html</loc></url>
 <url><loc>https://vibe-lab-gsd.github.io/zoneR/reference/index.html</loc></url>
 <url><loc>https://vibe-lab-gsd.github.io/zoneR/reference/possible_checks.html</loc></url>
+<url><loc>https://vibe-lab-gsd.github.io/zoneR/reference/reasons.html</loc></url>
 <url><loc>https://vibe-lab-gsd.github.io/zoneR/reference/state_planes_crs.html</loc></url>
 <url><loc>https://vibe-lab-gsd.github.io/zoneR/reference/zr_add_setbacks.html</loc></url>
 <url><loc>https://vibe-lab-gsd.github.io/zoneR/reference/zr_check_constraints.html</loc></url>
@@ -25,5 +26,8 @@
 <url><loc>https://vibe-lab-gsd.github.io/zoneR/reference/zr_ozfs_validate.html</loc></url>
 <url><loc>https://vibe-lab-gsd.github.io/zoneR/reference/zr_rotate_shape.html</loc></url>
 <url><loc>https://vibe-lab-gsd.github.io/zoneR/reference/zr_run_zoning_checks.html</loc></url>
+<url><loc>https://vibe-lab-gsd.github.io/zoneR/reference/zr_summary_by_muni.html</loc></url>
+<url><loc>https://vibe-lab-gsd.github.io/zoneR/reference/zr_summary_false.html</loc></url>
+<url><loc>https://vibe-lab-gsd.github.io/zoneR/reference/zr_summary_maybe.html</loc></url>
 </urlset>
 
