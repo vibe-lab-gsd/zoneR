@@ -24,5 +24,15 @@ if (getRversion() >= "2.15.1") {
                            "reason",
                            "possible_checks",
                            "zoning_id",
-                           "district_check"))
+                           "district_check",
+                           "muni_name",
+                           "num_allowed",
+                           "num_maybe",
+                           "num_prohib",
+                           "Freq",
+                           "reasons",
+                           "Var1",
+                           "Reason for prohibition",
+                           "Number of parcels",
+                           "Reason for ambiguity"))
 }
