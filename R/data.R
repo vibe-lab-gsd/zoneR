@@ -5,7 +5,7 @@
 #' The geometry was gathered from an arcgis hub data set, and
 #' the epsg codes were gathered from epsg.io
 #'
-#' @format ## `state_planes_crs`
+#' @format
 #' Simple feature collection with 121 features and 4 fields
 #' \describe{
 #'   \item{OBJECTID}{Row Index}
@@ -60,5 +60,13 @@
 #'
 #' This table describes what each name means when it is listed
 #' as a reason for a MAYBE or FALSE value in the building check.
-"false_maybe_reasons"
+#' @format
+#' An object of class `tbl_df` (inherits from `tbl`, `data.frame`) with 31 rows and 3 columns.
+#' \describe{
+#'   \item{short_reason}{The reason given in the results of `zr_run_zoning_checks()`}
+#'   \item{false_explain}{What the reason means when the value is FALSE (i.e. when the building is not allowed)}
+#'   \item{maybe_explain}{What the reason means when the value is MAYBE (i.e. when the building might be allowed)}
+#' }
+#' @source Generated internally by zoneR
+"reasons"
 
