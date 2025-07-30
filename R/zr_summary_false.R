@@ -18,11 +18,11 @@ zr_summary_false <- function(detailed_result){
     unlist() |>
     table() |>
     as.data.frame() |>
-    arrange(-Freq) |>
-    mutate(`Reason for prohibition` =
+    dplyr::arrange(-Freq) |>
+    dplyr::mutate(`Reason for prohibition` =
              reasons$false_explain[match(Var1, reasons$short_reason)]) |>
-    rename(`Number of parcels` = Freq) |>
-    select(`Reason for prohibition`, `Number of parcels`)
+    dplyr::rename(`Number of parcels` = Freq) |>
+    dplyr::select(`Reason for prohibition`, `Number of parcels`)
 
   return(summary)
 }

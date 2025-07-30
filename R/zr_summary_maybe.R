@@ -18,11 +18,11 @@ zr_summary_maybe <- function(detailed_result){
     unlist() |>
     table() |>
     as.data.frame() |>
-    arrange(-Freq) |>
-    mutate(`Reason for ambiguity` =
+    dplyr::arrange(-Freq) |>
+    dplyr::mutate(`Reason for ambiguity` =
              reasons$maybe_explain[match(Var1, reasons$short_reason)]) |>
-    rename(`Number of parcels` = Freq) |>
-    select(`Reason for ambiguity`, `Number of parcels`)
+    dplyr::rename(`Number of parcels` = Freq) |>
+    dplyr::select(`Reason for ambiguity`, `Number of parcels`)
 
   return(summary)
 }
