@@ -21,7 +21,7 @@ zr_summary_by_muni <- function(detailed_result){
     dplyr::mutate(muni_name = "Total") |>
     dplyr::select(muni_name, num_allowed, num_maybe, num_prohib)
 
-  summary |>
+  summary <- detailed_result |>
     sf::st_drop_geometry() |>
     dplyr::group_by(muni_name) |>
     dplyr::summarise(num_allowed = sum(allowed == "TRUE"),
