@@ -5,7 +5,8 @@
 \alias{possible_checks}
 \title{Possible Constraints to Check}
 \format{
-A character vector
+A character vector of length 28.
+It contains the following values:
 c("res_type",
 "far",
 "fl_area",
@@ -34,6 +35,9 @@ c("res_type",
 "unit_size",
 "bldg_fit",
 "overlay")
+}
+\source{
+Generated internally by zoneR
 }
 \usage{
 possible_checks

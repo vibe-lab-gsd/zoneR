@@ -57,41 +57,7 @@ argument. A few checks are built in to the function and, therefore, not a part o
 \code{checks} argument.
 
 The resulting data frame of \code{zr_run_zoning_checks()} will have a "reason" column with
-the names of any checks that caused a FALSE or a MAYBE building allowance.
-The table below specifies what each check means when it is part of the "reason"
-column.\tabular{lll}{
-   Possible Checks \tab Type \tab Reason Column Usage \cr
-   PD_dist \tab built in \tab FALSE returned because parcel is in a planned development district \cr
-   PD_overlay \tab built in \tab FALSE returned because parcel is in a planned development overlay district \cr
-   side_lbl \tab built in \tab MAYBE returned because the parcel sides were not labeled and check_fit was not run \cr
-   res_type \tab user input \tab Residential type check returned FALSE or MAYBE \cr
-   far \tab user input \tab Floor Area Ratio check returned FALSE or MAYBE \cr
-   fl_area \tab user input \tab Floor area check returned FALSE or MAYBE \cr
-   fl_area_first \tab user input \tab Area of first floor check returned FALSE or MAYBE \cr
-   fl_area_top \tab user input \tab Area of top floor check returned FALSE or MAYBE \cr
-   footprint \tab user input \tab Footprint check returned FALSE or MAYBE \cr
-   height \tab user input \tab Height check returned FALSE or MAYBE \cr
-   height_eave \tab user input \tab Height eave check returned FALSE or MAYBE \cr
-   lot_cov_bldg \tab user input \tab Lot coverage check returned FALSE or MAYBE \cr
-   lot_area \tab user input \tab Lot area check returned FALSE or MAYBE \cr
-   parking_enclosed \tab user input \tab Enclosed parking check returned FALSE or MAYBE \cr
-   stories \tab user input \tab Stories check returned FALSE or MAYBE \cr
-   unit_0bed \tab user input \tab 0-bed unit quantity check returned FALSE or MAYBE \cr
-   unit_1bed \tab user input \tab 1-bed unit quantity check returned FALSE or MAYBE \cr
-   unit_2bed \tab user input \tab 2-bed unit quantity check returned FALSE or MAYBE \cr
-   unit_3bed \tab user input \tab 3-bed unit quantity check returned FALSE or MAYBE \cr
-   unit_4bed \tab user input \tab 4plus-bed unit quantity check returned FALSE or MAYBE \cr
-   unit_density \tab user input \tab Unit density check returned FALSE or MAYBE \cr
-   unit_pct_0bed \tab user input \tab Percent 0-bed units check returned FALSE or MAYBE \cr
-   unit_pct_1bed \tab user input \tab Percent 1-bed units check returned FALSE or MAYBE \cr
-   unit_pct_2bed \tab user input \tab Percent 2-bed units check returned FALSE or MAYBE \cr
-   unit_pct_3bed \tab user input \tab Percent 3-bed units check returned FALSE or MAYBE \cr
-   unit_pct_4bed \tab user input \tab Percent 4plus-bed units check returned FALSE or MAYBE \cr
-   total_units \tab user input \tab Total units check returned FALSE or MAYBE \cr
-   unit_size_avg \tab user input \tab Average unit size check returned FALSE or MAYBE \cr
-   unit_size \tab user input \tab Unit size check returned FALSE or MAYBE \cr
-   bldg_fit \tab user input \tab Building fit check returned FALSE or MAYBE \cr
-   overlay \tab user input \tab MAYBE returned because parcel is in an overlay district \cr
-}
+the names of any checks that caused a FALSE or a MAYBE building allowance. For
+more details on what the reasons column means, see the package data \code{reasons}.
 }
 

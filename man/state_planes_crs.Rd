@@ -5,8 +5,6 @@
 \alias{state_planes_crs}
 \title{State Planes with Projected CRS Data}
 \format{
-\subsection{\code{state_planes_crs}}{
-
 Simple feature collection with 121 features and 4 fields
 \describe{
 \item{OBJECTID}{Row Index}
@@ -14,7 +12,6 @@ Simple feature collection with 121 features and 4 fields
 \item{ZONENAME}{Zone Name}
 \item{EPSG_NAD83}{Projected CRS EPSG Code}
 
-}
 }
 }
 \source{
