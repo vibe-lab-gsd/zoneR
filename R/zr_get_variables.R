@@ -200,15 +200,20 @@ zr_get_variables <- function(bldg_data, parcel_data, district_data, zoning_data)
         }
         value <- evaluated_expr
         break
+      } else{
+        notmet <- notmet + 1
       }
 
     }
 
     if (notmet == length(var_list)){
-      stop(paste("No conditions met. Unable to find",var_name, "variable"))
+      warning(paste0("No conditions met for zoning definition ",var_name, ". Recorded as 'not_defined'"))
+      vars_df[[var_name]] <- "not_defined"
+    } else{
+      vars_df[[var_name]] <- value
     }
 
-    vars_df[[var_name]] <- value
+
 
   } # end loop through each variable that will need to be defined.
 
