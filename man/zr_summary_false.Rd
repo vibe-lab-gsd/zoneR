@@ -4,11 +4,14 @@
 \alias{zr_summary_false}
 \title{Summarize the reasons for maybe results}
 \usage{
-zr_summary_false(detailed_result)
+zr_summary_false(detailed_result, muni = "All")
 }
 \arguments{
 \item{detailed_result}{The output simple features data frame from
 zr_run_zoning_checks()}
+
+\item{muni}{The city to summarize data for. Defaults to "All" to aggregate
+across all cities include in the results file.}
 }
 \value{
 A tibble summarizing the reasons for maybe values.

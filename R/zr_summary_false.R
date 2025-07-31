@@ -18,7 +18,7 @@ zr_summary_false <- function(detailed_result,
 
   if(muni != "All") {
     detailed_result <- detailed_result |>
-      filter(muni_name == muni)
+      dplyr::filter(muni_name == muni)
   }
 
   summary <- detailed_result$reason[detailed_result$allowed == "FALSE"] |>
