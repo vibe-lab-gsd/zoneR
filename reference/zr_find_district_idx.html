@@ -69,6 +69,48 @@ contains the zoning_sf row index of the district the parcel is in</p>
 column stating the row number of the corresponding zoning_sf district</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># preparing  all the OZFS files to run functions</span></span></span>
+<span class="r-in"><span><span class="va">zoning_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="zr_example_files.html">zr_example_files</a></span><span class="op">(</span><span class="st">"Paradise.zoning"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">parcel_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="zr_example_files.html">zr_example_files</a></span><span class="op">(</span><span class="st">"Paradise.parcel"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># getting zoning file as simple features object</span></span></span>
+<span class="r-in"><span><span class="va">zoning_sf</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="va">zoning_file</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># getting parcel file as simple features object</span></span></span>
+<span class="r-in"><span><span class="va">parcels_sf</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="va">parcel_file</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># get parcel_dims</span></span></span>
+<span class="r-in"><span><span class="va">parcel_dims</span> <span class="op">&lt;-</span> <span class="fu"><a href="zr_get_parcel_dims.html">zr_get_parcel_dims</a></span><span class="op">(</span><span class="va">parcels_sf</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># use parcel_dims to create parcel_df with a zoning_id column</span></span></span>
+<span class="r-in"><span><span class="va">parcel_df</span> <span class="op">&lt;-</span> <span class="fu">zr_find_district_idx</span><span class="op">(</span><span class="va">parcel_dims</span>, <span class="va">zoning_sf</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># notice the zoning_id column</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">parcel_df</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Simple feature collection with 6 features and 6 fields</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Geometry type: POINT</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Dimension:     XY</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Bounding box:  xmin: -97.69917 ymin: 33.1448 xmax: -97.69153 ymax: 33.15607</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Geodetic CRS:  WGS 84</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                           parcel_id lot_width lot_depth   lot_area lot_type</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1     Wise_County_combined_parcel_1    1.0000    1.0000 66.1724481  regular</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 Wise_County_combined_parcel_10300  225.5188  603.3620  1.9954889   corner</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 Wise_County_combined_parcel_10450  284.8850  655.8875  4.2351432   corner</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4 Wise_County_combined_parcel_10451  105.1301  109.9494  0.2620239  regular</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 Wise_County_combined_parcel_10452   99.8650  109.8487  0.2517562   corner</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6 Wise_County_combined_parcel_10464    1.0000    1.0000 97.5398037  regular</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   zoning_id                   geometry</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1         2 POINT (-97.69524 33.14755)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2         2 POINT (-97.69382 33.15607)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3         2  POINT (-97.69415 33.1448)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4         2 POINT (-97.69156 33.14562)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5         2 POINT (-97.69153 33.14699)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6         2 POINT (-97.69917 33.15142)</span>
+<span class="r-in"><span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

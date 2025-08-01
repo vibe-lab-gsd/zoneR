@@ -55,6 +55,45 @@ zr_run_zoning_checks()</p></dd>
 results by municipality</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">zoning_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="zr_example_files.html">zr_example_files</a></span><span class="op">(</span><span class="st">"Paradise.zoning"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">parcel_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="zr_example_files.html">zr_example_files</a></span><span class="op">(</span><span class="st">"Paradise.parcel"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">bldg_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="zr_example_files.html">zr_example_files</a></span><span class="op">(</span><span class="st">"2_fam.bldg"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># only checking against height constraints</span></span></span>
+<span class="r-in"><span><span class="va">just_check_height</span> <span class="op">&lt;-</span> <span class="fu"><a href="zr_run_zoning_checks.html">zr_run_zoning_checks</a></span><span class="op">(</span>bldg_file <span class="op">=</span> <span class="va">bldg_file</span>,</span></span>
+<span class="r-in"><span>                                          parcel_files <span class="op">=</span> <span class="va">parcel_file</span>,</span></span>
+<span class="r-in"><span>                                          zoning_files <span class="op">=</span> <span class="va">zoning_file</span>,</span></span>
+<span class="r-in"><span>                                          checks <span class="op">=</span> <span class="st">"height"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ___data_prep___(0.2 sec)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ___get_zoning_req___(2.6 sec)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ___initial_checks___(1.4 sec)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 97 parcels are TRUE or MAYBE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> _____summary_____</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> total runtime: 4.3 sec (0.07 min)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 97 / 421 parcels allow the building</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">zr_summary_by_muni</span><span class="op">(</span><span class="va">just_check_height</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 2 × 4</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   muni_name num_allowed num_maybe num_prohib</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Paradise           97         0        324</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> Total              97         0        324</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="zr_summary_false.html">zr_summary_false</a></span><span class="op">(</span><span class="va">just_check_height</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          Reason for prohibition Number of parcels</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 Non-compliant building height               324</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="zr_summary_maybe.html">zr_summary_maybe</a></span><span class="op">(</span><span class="va">just_check_height</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> No MAYBE values found in results</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

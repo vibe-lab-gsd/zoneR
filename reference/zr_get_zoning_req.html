@@ -98,6 +98,39 @@ NA values indicate the requirement isn't recorded in that district.
 If every value is NA, it could indicate that the building land use is not allowed in the zoning district.</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># preparing  all the OZFS files to run functions</span></span></span>
+<span class="r-in"><span><span class="va">zoning_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="zr_example_files.html">zr_example_files</a></span><span class="op">(</span><span class="st">"Paradise.zoning"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">parcel_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="zr_example_files.html">zr_example_files</a></span><span class="op">(</span><span class="st">"Paradise.parcel"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">bldg_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="zr_example_files.html">zr_example_files</a></span><span class="op">(</span><span class="st">"2_fam.bldg"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># getting zoning file as simple features object and as a list</span></span></span>
+<span class="r-in"><span><span class="va">zoning_sf</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="va">zoning_file</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">zoning_data</span> <span class="op">&lt;-</span> <span class="fu">rjson</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/rjson/man/fromJSON.html" class="external-link">fromJSON</a></span><span class="op">(</span>file <span class="op">=</span> <span class="va">zoning_file</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># getting parcel file as simple features object</span></span></span>
+<span class="r-in"><span><span class="va">parcels_sf</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="va">parcel_file</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># getting bldg file as a list</span></span></span>
+<span class="r-in"><span><span class="va">bldg_data</span> <span class="op">&lt;-</span> <span class="fu">rjson</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/rjson/man/fromJSON.html" class="external-link">fromJSON</a></span><span class="op">(</span>file <span class="op">=</span> <span class="va">bldg_file</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># get parcel_dims</span></span></span>
+<span class="r-in"><span><span class="va">parcel_dims</span> <span class="op">&lt;-</span> <span class="fu"><a href="zr_get_parcel_dims.html">zr_get_parcel_dims</a></span><span class="op">(</span><span class="va">parcels_sf</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># use parcel_dims to create parcel_df with a zoning_id column</span></span></span>
+<span class="r-in"><span><span class="va">parcel_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="zr_find_district_idx.html">zr_find_district_idx</a></span><span class="op">(</span><span class="va">parcel_dims</span>, <span class="va">zoning_sf</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># choose just one parcel for the example</span></span></span>
+<span class="r-in"><span><span class="va">parcel_data</span> <span class="op">&lt;-</span> <span class="va">parcel_df</span><span class="op">[</span><span class="va">parcel_df</span><span class="op">$</span><span class="va">parcel_id</span> <span class="op">==</span> <span class="st">"Wise_County_combined_parcel_10300"</span>,<span class="op">]</span></span></span>
+<span class="r-in"><span><span class="co"># get the row of the district that parcel is apart of</span></span></span>
+<span class="r-in"><span><span class="va">district_data</span> <span class="op">&lt;-</span> <span class="va">zoning_sf</span><span class="op">[</span><span class="va">parcel_data</span><span class="op">$</span><span class="va">zoning_id</span>,<span class="op">]</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># get variables</span></span></span>
+<span class="r-in"><span><span class="va">vars</span> <span class="op">&lt;-</span> <span class="fu"><a href="zr_get_variables.html">zr_get_variables</a></span><span class="op">(</span><span class="va">bldg_data</span>, <span class="va">parcel_data</span>, <span class="va">district_data</span>, <span class="va">zoning_data</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># get zoning requirements</span></span></span>
+<span class="r-in"><span><span class="va">zoning_req</span> <span class="op">&lt;-</span> <span class="fu">zr_get_zoning_req</span><span class="op">(</span>district_data <span class="op">=</span> <span class="va">district_data</span>, vars <span class="op">=</span> <span class="va">vars</span><span class="op">)</span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 
