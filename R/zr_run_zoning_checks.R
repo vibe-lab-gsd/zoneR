@@ -39,6 +39,20 @@
 #' @export
 #'
 #' @examples
+#' zoning_file <- zr_example_files("Paradise.zoning")
+#' parcel_file <- zr_example_files("Paradise.parcel")
+#' bldg_file <- zr_example_files("2_fam.bldg")
+#'
+#' # checking against all possible constraints which is the default
+#' run_all_checks <- zr_run_zoning_checks(bldg_file = bldg_file,
+#'                                        parcel_files = parcel_file,
+#'                                        zoning_files = zoning_file)
+#'
+#' # only checking against height constraints
+#' just_check_height <- zr_run_zoning_checks(bldg_file = bldg_file,
+#'                                           parcel_files = parcel_file,
+#'                                           zoning_files = zoning_file,
+#'                                           checks = "height")
 zr_run_zoning_checks <- function(bldg_file,
                                  parcel_files,
                                  zoning_files,
@@ -502,8 +516,10 @@ zr_run_zoning_checks <- function(bldg_file,
 
   if ("bldg_fit" %in% checks & nrow(parcel_df) > 0 & !is.null(parcel_geo)){
     foot_start_time <- proc.time()[[3]]
+    error_parcels <- c()
     for (z in 1:nrow(parcel_df)){
       parcel_data <- parcel_df[z,]
+      parcel_name <- parcel_data$parcel_id
       district_data <- zoning_sf[parcel_data$zoning_id,]
       zoning_req <- zoning_req_list[[parcel_data$parcel_id]]
       vars <- vars_list[[parcel_data$parcel_id]]
@@ -511,19 +527,98 @@ zr_run_zoning_checks <- function(bldg_file,
       # if the footprint area is smaller than the parcel area,
       # then run the check_fit function
       if (vars$lot_cov_bldg <= 100){
-        parcel_sides <- parcel_geo |>
-          dplyr::filter(parcel_id == parcel_data$parcel_id)
-        parcel_with_setbacks <- zr_add_setbacks(parcel_sides, district_data, zoning_req)
-        buildable_area <- zr_get_buildable_area(parcel_with_setbacks, crs)
+        parcel_sides <- tryCatch(
+          {
+            parcel_geo |>
+              dplyr::filter(parcel_id == parcel_data$parcel_id)
+          }, error = function(e) {
+            error <- "error"
+            class(error) <- "error"
+            return(error)
+          }
+        )
+
+        if (inherits(parcel_sides, "error")){
+          error_parcels <- c(error_parcels, parcel_name)
+        }
+
+        parcel_with_setbacks <- tryCatch(
+          {
+            zr_add_setbacks(parcel_sides, district_data, zoning_req)
+          }, error = function(e) {
+            error <- "error"
+            class(error) <- "error"
+            return(error)
+          }
+        )
+
+        if (inherits(parcel_with_setbacks, "error")){
+          error_parcels <- c(error_parcels, parcel_name)
+        }
+
+        buildable_area <- tryCatch(
+          {
+            zr_get_buildable_area(parcel_with_setbacks, crs)
+          }, error = function(e) {
+            error <- "error"
+            class(error) <- "error"
+            return(error)
+          }
+        )
+
+        if (inherits(buildable_area, "error")){
+          error_parcels <- c(error_parcels, parcel_name)
+        }
+
+        # parcel_sides <- parcel_geo |>
+        #   dplyr::filter(parcel_id == parcel_data$parcel_id)
+        # parcel_with_setbacks <- zr_add_setbacks(parcel_sides, district_data, zoning_req)
+        # buildable_area <- zr_get_buildable_area(parcel_with_setbacks, crs)
 
         # if two buildable areas were recorded, we need to test for both
+        check_1_maybe <- FALSE
         if (length(buildable_area) > 1){
-          check_1 <- zr_check_fit(bldg_data, sf::st_make_valid(buildable_area[[1]]), crs = crs)
 
-          if (check_1){
+          check_1 <- tryCatch(
+            {
+              zr_check_fit(bldg_data, sf::st_make_valid(buildable_area[[1]]), crs = crs)
+            }, error = function(e) {
+              error <- "error"
+              class(error) <- "error"
+              return(error)
+            }
+          )
+
+          if (inherits(check_1, "error")){
+            error_parcels <- c(error_parcels, parcel_name)
+            check_1 <- TRUE
+            check_1_maybe <- TRUE
+          }
+
+          # check_1 <- zr_check_fit(bldg_data, sf::st_make_valid(buildable_area[[1]]), crs = crs)
+
+          if (check_1 & check_1_maybe){
+            check <- "MAYBE"
+          } else if (check_1){
             check <- check_1
           } else{
-            check_2 <- zr_check_fit(bldg_data, sf::st_make_valid(buildable_area[[2]]), crs = crs)
+
+            check_2 <- tryCatch(
+              {
+                zr_check_fit(bldg_data, sf::st_make_valid(buildable_area[[2]]), crs = crs)
+              }, error = function(e) {
+                error <- "error"
+                class(error) <- "error"
+                return(error)
+              }
+            )
+
+            if (inherits(check_2, "error")){
+              error_parcels <- c(error_parcels, parcel_name)
+              check_2 <- TRUE
+            }
+
+            # check_2 <- zr_check_fit(bldg_data, sf::st_make_valid(buildable_area[[2]]), crs = crs)
             if (check_2){
               check <- "MAYBE"
             } else{
@@ -532,7 +627,22 @@ zr_run_zoning_checks <- function(bldg_file,
           }
 
         } else{
-          check <- zr_check_fit(bldg_data, sf::st_make_valid(buildable_area[[1]]), crs = crs)
+          check <- tryCatch(
+            {
+              zr_check_fit(bldg_data, sf::st_make_valid(buildable_area[[1]]), crs = crs)
+            }, error = function(e) {
+              error <- "error"
+              class(error) <- "error"
+              return(error)
+            }
+          )
+
+          if (inherits(check, "error")){
+            error_parcels <- c(error_parcels, parcel_name)
+            check <- "MAYBE"
+          }
+
+          # check <- zr_check_fit(bldg_data, sf::st_make_valid(buildable_area[[1]]), crs = crs)
         }
 
       } else{
@@ -550,6 +660,10 @@ zr_run_zoning_checks <- function(bldg_file,
       if (check == FALSE){
         parcel_df[z,"false_reasons"] <- ifelse(is.na(parcel_df[[z,"false_reasons"]]), "bldg_fit", paste(parcel_df[[z,"false_reasons"]], "bldg_fit", sep = ", "))
       }
+    }
+
+    if (length(error_parcels > 0)){
+      warning(paste0("The following parcels were marked as MAYBE because they produced errors during zr_check_fit:\n", paste(unique(error_parcels),collapse = "\n")))
     }
 
     # if detailed_check == FALSE, then we store the FALSE parcels in a list to be combined later
@@ -660,59 +774,6 @@ zr_run_zoning_checks <- function(bldg_file,
     final_df$is_duplicate[duplicated(final_df$parcel_id) | duplicated(final_df$parcel_id, fromLast = TRUE)] <- TRUE
     final_df$is_duplicate[is.na(final_df$is_duplicate)] <- FALSE
 
-    # end of this part (can probably delete the rest)
-    ##########################
-
-    # # loop through each duplicated parcel_id
-    # new_dfs <- list()
-    # length(new_dfs) <- length(duplicates)
-    # for (i in 1:length(duplicates)){
-    #   id <- duplicates[[i]]
-    #
-    #   # filter to just the first duplicate ids
-    #   new_df <- final_df |>
-    #     dplyr::filter(parcel_id == id)
-    #
-    #   # make a vector of all the allowed values
-    #   allowed_vals <- new_df$allowed
-    #
-    #   # if all duplicates are TRUE, then it is still TRUE
-    #   # if all duplicates are FALSE, then it is still FALSE
-    #   # if any other combination, it is MABYE
-    #   if (sum(allowed_vals == TRUE) == length(allowed_vals)){
-    #     val <- TRUE
-    #   } else if (sum(allowed_vals == FALSE) == length(allowed_vals)){
-    #     val <- FALSE
-    #   } else{
-    #     val <- "MAYBE"
-    #   }
-    #
-    #   # this just groups the rows so I can combine the reason
-    #   updated <- new_df |>
-    #     dplyr::group_by(parcel_id) |>
-    #     dplyr::summarise(allowed = val,
-    #                      reason = paste(reason,collapse = " ---||--- "))
-    #
-    #   new_reason <- updated$reason
-    #
-    #   # make a new df with just one row for the parcel_id
-    #   updated_df <- new_df[1,]
-    #   updated_df[1,"allowed"] <- as.character(val)
-    #   updated_df[1,"reason"] <- new_reason
-    #   # add that df to a list of the combined parcel_id dfs
-    #   new_dfs[[i]] <- updated_df
-    #
-    # }
-    #
-    # # make one df out of all the combined parcel_id dfs
-    # combined_duplicates <- dplyr::bind_rows(new_dfs)
-    #
-    # # take out the old duplicated parcel_id rows
-    # final_df <- final_df |>
-    #   dplyr::filter(!parcel_id %in% duplicates)
-    #
-    # # add the new combined parcel_id rows
-    # final_df <- rbind(final_df, combined_duplicates)
   }
 
 
@@ -774,31 +835,3 @@ zr_run_zoning_checks <- function(bldg_file,
   return(final_df)
 
 }
-
-# final_df |>
-#   ggplot2::ggplot() +
-#   ggplot2::geom_sf(ggplot2::aes(color = allowed))
-#
-# bldg_file <- "inst/extdata/2_fam.bldg"
-# parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_parcels_to_test/"
-# zoning_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_to_test/"
-#
-# # zoning_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/ozfs_edited/Farmers Branch.zoning"
-# # parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/Dalworthington Gardens.parcel"
-# #
-# # parcel_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_parcels_to_test/Dallas.parcel"
-# # zoning_files <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/zoning_to_test/Dallas.zoning"
-#
-# detailed_check <- TRUE
-# print_checkpoints <- TRUE
-# checks <- possible_checks
-# save_to <- NULL
-# # save_to <- "../personal_rpoj/1_nza_to_ozfs/nza_to_ozfs/testing_zoning_output.geojson"
-#
-# all_checks_but_bldg_fit <- zr_run_zoning_checks(bldg_file,
-#                                  parcel_files,
-#                                  zoning_files,
-#                                  detailed_check,
-#                                  print_checkpoints,
-#                                  checks,
-#                                  save_to)
