@@ -43,12 +43,7 @@
 #' parcel_file <- zr_example_files("Paradise.parcel")
 #' bldg_file <- zr_example_files("2_fam.bldg")
 #'
-#' # checking against all possible constraints which is the default
-#' run_all_checks <- zr_run_zoning_checks(bldg_file = bldg_file,
-#'                                        parcel_files = parcel_file,
-#'                                        zoning_files = zoning_file)
-#'
-#' # only checking against height constraints
+#' # only checking against height constraints for speed
 #' just_check_height <- zr_run_zoning_checks(bldg_file = bldg_file,
 #'                                           parcel_files = parcel_file,
 #'                                           zoning_files = zoning_file,
