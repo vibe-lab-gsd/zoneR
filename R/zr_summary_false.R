@@ -12,7 +12,7 @@
 #'
 #' @export
 #'
-#' @examples
+#' @example inst/examples/summary_examples.R
 zr_summary_false <- function(detailed_result,
                              muni = "All"){
 

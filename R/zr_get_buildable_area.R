@@ -13,6 +13,7 @@
 #' Returns a polygon representing the buildable area of the parcel.
 #' @export
 #'
+#' @example inst/examples/fit_example.R
 zr_get_buildable_area <- function(parcel_with_setbacks, crs = NULL){
 
   if (is.null(crs)){

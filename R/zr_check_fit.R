@@ -9,6 +9,7 @@
 #' Returns TRUE of FALSE stating whether or not the building footprint would fit in the buildable area.
 #' @export
 #'
+#' @example inst/examples/fit_example.R
 zr_check_fit <- function(bldg_data, buildable_area, crs = 3081){
   width <- bldg_data$bldg_info$width * 0.3048
   depth <- bldg_data$bldg_info$depth * 0.3048

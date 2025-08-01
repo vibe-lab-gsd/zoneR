@@ -12,6 +12,26 @@
 #' column stating the row number of the corresponding zoning_sf district
 #' @export
 #'
+#' @examples
+#' # preparing  all the OZFS files to run functions
+#' zoning_file <- zr_example_files("Paradise.zoning")
+#' parcel_file <- zr_example_files("Paradise.parcel")
+#'
+#' # getting zoning file as simple features object
+#' zoning_sf <- sf::st_read(zoning_file, quiet = TRUE)
+#'
+#' # getting parcel file as simple features object
+#' parcels_sf <- sf::st_read(parcel_file, quiet = TRUE)
+#'
+#' # get parcel_dims
+#' parcel_dims <- zr_get_parcel_dims(parcels_sf)
+#'
+#' # use parcel_dims to create parcel_df with a zoning_id column
+#' parcel_df <- zr_find_district_idx(parcel_dims, zoning_sf)
+#'
+#' # notice the zoning_id column
+#' head(parcel_df)
+#'
 zr_find_district_idx <- function(parcels_centroids_sf, zoning_sf, idx_col_name = "zoning_id"){
 
   zoning_sf <- sf::st_make_valid(zoning_sf)
@@ -27,3 +47,5 @@ zr_find_district_idx <- function(parcels_centroids_sf, zoning_sf, idx_col_name =
   return(parcels_with_zoning_id)
 
 }
+
+

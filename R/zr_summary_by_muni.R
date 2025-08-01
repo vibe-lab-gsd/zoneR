@@ -10,7 +10,7 @@
 #' results by municipality
 #' @export
 #'
-#' @examples
+#' @example inst/examples/summary_examples.R
 zr_summary_by_muni <- function(detailed_result){
 
   totals <- detailed_result |>

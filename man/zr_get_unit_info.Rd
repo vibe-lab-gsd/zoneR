@@ -17,3 +17,8 @@ a data frame with information for each unit in the building
 \code{zr_get_unit_info()} takes a json representing a building and
 returns a data frame with data for each unit in the building.
 }
+\examples{
+bldg_file <- zr_example_files("2_fam.bldg")
+
+zr_get_unit_info(bldg_file)
+}

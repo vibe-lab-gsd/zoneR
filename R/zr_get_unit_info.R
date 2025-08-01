@@ -9,6 +9,9 @@
 #' @export
 #'
 #' @examples
+#' bldg_file <- zr_example_files("2_fam.bldg")
+#'
+#' zr_get_unit_info(bldg_file)
 zr_get_unit_info <- function(bldg_data){
 
   if (class(bldg_data)[[1]] == "character"){

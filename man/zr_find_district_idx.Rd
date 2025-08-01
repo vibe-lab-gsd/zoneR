@@ -25,3 +25,24 @@ column stating the row number of the corresponding zoning_sf district
 \code{zr_find_district_idx()} uses \code{\link[sf:st_join]{sf::st_join()}} to adds a new column to the parcels data that
 contains the zoning_sf row index of the district the parcel is in
 }
+\examples{
+# preparing  all the OZFS files to run functions
+zoning_file <- zr_example_files("Paradise.zoning")
+parcel_file <- zr_example_files("Paradise.parcel")
+
+# getting zoning file as simple features object
+zoning_sf <- sf::st_read(zoning_file, quiet = TRUE)
+
+# getting parcel file as simple features object
+parcels_sf <- sf::st_read(parcel_file, quiet = TRUE)
+
+# get parcel_dims
+parcel_dims <- zr_get_parcel_dims(parcels_sf)
+
+# use parcel_dims to create parcel_df with a zoning_id column
+parcel_df <- zr_find_district_idx(parcel_dims, zoning_sf)
+
+# notice the zoning_id column
+head(parcel_df)
+
+}

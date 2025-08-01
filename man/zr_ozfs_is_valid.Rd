@@ -17,3 +17,15 @@ TRUE or FALSE stating whether data is in valid OZFS format or not
 properly formatted according to OZFS standards. Use \link{zr_ozfs_validate} for
 a detailed list of why files don't meet the standard.
 }
+\examples{
+correct_file <- zr_example_files("Paradise.zoning")
+incorrect_file <- zr_example_files("Paradise.parcel")
+
+# correct OZFS
+zr_ozfs_validate(correct_file)
+
+zr_ozfs_is_valid(correct_file)
+
+# incorrect OZFS
+zr_ozfs_is_valid(incorrect_file)
+}

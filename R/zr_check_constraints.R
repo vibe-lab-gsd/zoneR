@@ -18,32 +18,41 @@
 #' @export
 #'
 #' @examples
+#' # preparing  all the OZFS files to run functions
+#' zoning_file <- zr_example_files("Paradise.zoning")
+#' parcel_file <- zr_example_files("Paradise.parcel")
+#' bldg_file <- zr_example_files("2_fam.bldg")
+#'
+#' # getting zoning file as simple features object and as a list
+#' zoning_sf <- sf::st_read(zoning_file, quiet = TRUE)
+#' zoning_data <- rjson::fromJSON(file = zoning_file)
+#' # getting parcel file as simple features object
+#' parcels_sf <- sf::st_read(parcel_file, quiet = TRUE)
+#' # getting bldg file as a list
+#' bldg_data <- rjson::fromJSON(file = bldg_file)
+#'
+#' # get parcel_dims
+#' parcel_dims <- zr_get_parcel_dims(parcels_sf)
+#'
+#' # use parcel_dims to create parcel_df with a zoning_id column
+#' parcel_df <- zr_find_district_idx(parcel_dims, zoning_sf)
+#'
+#' # choose just one parcel for the example
+#' parcel_data <- parcel_df[parcel_df$parcel_id == "Wise_County_combined_parcel_10300",]
+#' # get the row of the district that parcel is apart of
+#' district_data <- zoning_sf[parcel_data$zoning_id,]
+#'
+#' # get variables
+#' vars <- zr_get_variables(bldg_data, parcel_data, district_data, zoning_data)
+#'
+#' # get zoning requirements
+#' zoning_req <- zr_get_zoning_req(district_data = district_data, vars = vars)
+#'
+#' constraints_check <- zr_check_constraints(vars, zoning_req)
+#'
 zr_check_constraints <- function(vars,
                                  zoning_req,
-                                 checks = c("far",
-                                            "fl_area",
-                                            "fl_area_first",
-                                            "fl_area_top",
-                                            "footprint",
-                                            "height",
-                                            "height_eave",
-                                            "lot_cov_bldg",
-                                            "lot_size",
-                                            "parking_enclosed",
-                                            "stories",
-                                            "unit_0bed",
-                                            "unit_1bed",
-                                            "unit_2bed",
-                                            "unit_3bed",
-                                            "unit_4bed",
-                                            "unit_density",
-                                            "unit_pct_0bed",
-                                            "unit_pct_1bed",
-                                            "unit_pct_2bed",
-                                            "unit_pct_3bed",
-                                            "unit_pct_4bed",
-                                            "total_units",
-                                            "unit_size_avg")){
+                                 checks = possible_checks[!possible_checks %in% c("res_type","unit_size","bldg_fit","overlay")]){
 
   # if the zonning_req is "character" and not "data.frame", there were no zoning requirements recorded.
   if (inherits(zoning_req,"character")){

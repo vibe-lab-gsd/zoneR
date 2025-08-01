@@ -415,9 +415,9 @@ zr_run_zoning_checks <- function(bldg_file,
 
     checks_df[] <- lapply(checks_df, as.character)
 
-    #checking res_type
+    #checking unit_size
     if ("unit_size" %in% checks){
-      unit_check_df <- data.frame(unit_size = as.character(zr_check_unit(vars, district_data)))
+      unit_check_df <- data.frame(unit_size = as.character(zr_check_unit(district_data, bldg_data, vars)))
     } else{
       unit_check_df <- data.frame(row.names = 1)
     }

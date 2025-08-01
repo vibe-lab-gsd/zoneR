@@ -20,3 +20,10 @@ Returns the simple feature shape object with rotated geometry
 \description{
 The \code{zr_rotate_shape()} function takes a one-row special feature object and rotates the geometry about the centroid or a specified point.
 }
+\examples{
+zoning_sf <- sf::st_read(zr_example_files("Paradise.zoning"), quiet = TRUE)
+first_district <- zoning_sf[5,]
+
+rotated_district <- zr_rotate_shape(first_district, 45)
+
+}

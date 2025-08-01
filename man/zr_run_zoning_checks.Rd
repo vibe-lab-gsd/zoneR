@@ -61,3 +61,19 @@ the names of any checks that caused a FALSE or a MAYBE building allowance. For
 more details on what the reasons column means, see the package data \code{reasons}.
 }
 
+\examples{
+zoning_file <- zr_example_files("Paradise.zoning")
+parcel_file <- zr_example_files("Paradise.parcel")
+bldg_file <- zr_example_files("2_fam.bldg")
+
+# checking against all possible constraints which is the default
+run_all_checks <- zr_run_zoning_checks(bldg_file = bldg_file,
+                                       parcel_files = parcel_file,
+                                       zoning_files = zoning_file)
+
+# only checking against height constraints
+just_check_height <- zr_run_zoning_checks(bldg_file = bldg_file,
+                                          parcel_files = parcel_file,
+                                          zoning_files = zoning_file,
+                                          checks = "height")
+}

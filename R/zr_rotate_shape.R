@@ -11,6 +11,12 @@
 #' Returns the simple feature shape object with rotated geometry
 #' @export
 #'
+#' @examples
+#' zoning_sf <- sf::st_read(zr_example_files("Paradise.zoning"), quiet = TRUE)
+#' first_district <- zoning_sf[5,]
+#'
+#' rotated_district <- zr_rotate_shape(first_district, 45)
+#'
 zr_rotate_shape <- function(shape, angle_degrees, center = NULL){
   # Convert angle to radians
   rad <- angle_degrees * pi / 180
@@ -55,3 +61,4 @@ zr_rotate_shape <- function(shape, angle_degrees, center = NULL){
 
   return(new_geom)
 }
+

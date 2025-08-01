@@ -7,6 +7,7 @@
 #' @returns A list of files names with ozfs errors or warnings
 #' @export
 #'
+#' @example inst/examples/validate_examples.R
 zr_ozfs_validate <- function(list_of_files){
 
   # start the empty list where we will store errors

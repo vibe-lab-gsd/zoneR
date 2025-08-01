@@ -9,7 +9,7 @@
 #' @returns TRUE or FALSE stating whether data is in valid OZFS format or not
 #' @export
 #'
-#' @examples
+#' @example inst/examples/validate_examples.R
 zr_ozfs_is_valid <- function(list_of_files){
   result <- suppressWarnings(try(zr_ozfs_validate(list_of_files), silent = TRUE))
   if (inherits(result, "try-error")) {
