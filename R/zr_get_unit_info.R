@@ -14,13 +14,13 @@
 #' zr_get_unit_info(bldg_file)
 zr_get_unit_info <- function(bldg_data){
 
-  if (class(bldg_data)[[1]] == "character"){
+  if (inherits(bldg_data,"character")){
     listed_json <- tryCatch({
       rjson::fromJSON(file = bldg_data)
     }, error = function(e) {
       stop("bldg_data must be a file path to an OZFS *.bldg file or a list created from said file")
     })
-  } else if (class(zoning_data)[[1]] == "list"){
+  } else if (inherits(bldg_data,"list")){
     listed_json <- bldg_data
   } else{
     stop("Improper input: bldg_data")
