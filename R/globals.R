@@ -34,5 +34,6 @@ if (getRversion() >= "2.15.1") {
                            "Var1",
                            "Reason for prohibition",
                            "Number of parcels",
-                           "Reason for ambiguity"))
+                           "Reason for ambiguity",
+                           "dist_abbr"))
 }

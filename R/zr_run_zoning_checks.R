@@ -281,8 +281,21 @@ zr_run_zoning_checks <- function(bldg_file,
     # make a new df with the pd district indexes
     pd_parcel_df <- pd_parcel_df |>
       dplyr::filter(!is.na(pd_id))
+
+    # add muni_name and dist_abbr to the df
+    dist_abbr_vec_pd <- pd_districts$dist_abbr
+    muni_name_vec_pd <- pd_districts$muni_name
+
+    pd_parcel_df$muni_name <- muni_name_vec_pd[pd_parcel_df$pd_id]
+    pd_parcel_df$dist_abbr <- dist_abbr_vec_pd[pd_parcel_df$pd_id]
+
+
     # get the unique parcel names that are in pd districts
     pd_parcels <- unique(pd_parcel_df$parcel_id)
+
+    # get the unique pd district abbreviations
+    pd_dist_abbr <- unique(pd_parcel_df$dist_abbr)
+
 
     # get the parcel names of the ones in pd_overlays
     pd_parcel_overlay_df <- pd_parcel_df[pd_parcel_df$pd_id %in% pd_overlay_idx,]
@@ -290,13 +303,13 @@ zr_run_zoning_checks <- function(bldg_file,
 
     if (length(pd_overlay_idx) > 0){
       parcel_df <- parcel_df |>
-        dplyr::mutate(check_pd = ifelse(parcel_id %in% pd_parcels, FALSE, TRUE),
+        dplyr::mutate(check_pd = ifelse(parcel_id %in% pd_parcels & dist_abbr %in% pd_dist_abbr, FALSE, TRUE),
                       false_reasons = ifelse(parcel_id %in% pd_parcels_overlay, ifelse(!is.na(false_reasons),paste(false_reasons, "PD_overlay", sep = ", "),"PD_overlay"),
-                                             ifelse(parcel_id %in% pd_parcels, ifelse(!is.na(false_reasons),paste(false_reasons, "PD_dist", sep = ", "),"PD_dist"), false_reasons)))
+                                             ifelse(parcel_id %in% pd_parcels & dist_abbr %in% pd_dist_abbr, ifelse(!is.na(false_reasons),paste(false_reasons, "PD_dist", sep = ", "),"PD_dist"), false_reasons)))
     } else{
       parcel_df <- parcel_df |>
-        dplyr::mutate(check_pd = ifelse(parcel_id %in% pd_parcels, FALSE, TRUE),
-                      false_reasons = ifelse(parcel_id %in% pd_parcels, ifelse(!is.na(false_reasons),paste(false_reasons, "PD_dist", sep = ", "),"PD_dist"), false_reasons))
+        dplyr::mutate(check_pd = ifelse(parcel_id %in% pd_parcels & dist_abbr %in% pd_dist_abbr, FALSE, TRUE),
+                      false_reasons = ifelse(parcel_id %in% pd_parcels & dist_abbr %in% pd_dist_abbr, ifelse(!is.na(false_reasons),paste(false_reasons, "PD_dist", sep = ", "),"PD_dist"), false_reasons))
     }
 
     # if detailed_check == FALSE, then we store the FALSE parcels in a list to be combined later
