@@ -296,19 +296,18 @@ zr_run_zoning_checks <- function(bldg_file,
     # get the unique pd district abbreviations
     pd_dist_abbr <- unique(pd_parcel_df$dist_abbr)
 
-
     # get the parcel names of the ones in pd_overlays
     pd_parcel_overlay_df <- pd_parcel_df[pd_parcel_df$pd_id %in% pd_overlay_idx,]
     pd_parcels_overlay <- unique(pd_parcel_overlay_df$parcel_id)
 
     if (length(pd_overlay_idx) > 0){
       parcel_df <- parcel_df |>
-        dplyr::mutate(check_pd = ifelse(parcel_id %in% pd_parcels & dist_abbr %in% pd_dist_abbr, FALSE, TRUE),
+        dplyr::mutate(check_pd = ifelse((parcel_id %in% pd_parcels & dist_abbr %in% pd_dist_abbr) | parcel_id %in% pd_parcels_overlay, FALSE, TRUE),
                       false_reasons = ifelse(parcel_id %in% pd_parcels_overlay, ifelse(!is.na(false_reasons),paste(false_reasons, "PD_overlay", sep = ", "),"PD_overlay"),
                                              ifelse(parcel_id %in% pd_parcels & dist_abbr %in% pd_dist_abbr, ifelse(!is.na(false_reasons),paste(false_reasons, "PD_dist", sep = ", "),"PD_dist"), false_reasons)))
     } else{
       parcel_df <- parcel_df |>
-        dplyr::mutate(check_pd = ifelse(parcel_id %in% pd_parcels & dist_abbr %in% pd_dist_abbr, FALSE, TRUE),
+        dplyr::mutate(check_pd = ifelse((parcel_id %in% pd_parcels & dist_abbr %in% pd_dist_abbr) | parcel_id %in% pd_parcels_overlay, FALSE, TRUE),
                       false_reasons = ifelse(parcel_id %in% pd_parcels & dist_abbr %in% pd_dist_abbr, ifelse(!is.na(false_reasons),paste(false_reasons, "PD_dist", sep = ", "),"PD_dist"), false_reasons))
     }
 
