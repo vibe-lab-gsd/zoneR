@@ -35,5 +35,9 @@ if (getRversion() >= "2.15.1") {
                            "Reason for prohibition",
                            "Number of parcels",
                            "Reason for ambiguity",
-                           "dist_abbr"))
+                           "dist_abbr",
+                           "allowed_now",
+                           "bldg_fit",
+                           "has_overlay",
+                           "overlay_type"))
 }
