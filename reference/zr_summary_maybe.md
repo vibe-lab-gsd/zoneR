@@ -39,13 +39,13 @@ just_check_height <- zr_run_zoning_checks(bldg_file = bldg_file,
                                           checks = "height")
 #> ___data_prep___(0.2 sec)
 #> 
-#> ___get_zoning_req___(2.7 sec)
+#> ___get_zoning_req___(2.8 sec)
 #> 
 #> ___initial_checks___(1.2 sec)
 #> 97 parcels are TRUE or MAYBE
 #> 
 #> _____summary_____
-#> total runtime: 4.2 sec (0.07 min)
+#> total runtime: 4.3 sec (0.07 min)
 #> 97 / 421 parcels allow the building
 
 zr_summary_by_muni(just_check_height)
