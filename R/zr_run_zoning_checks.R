@@ -27,7 +27,7 @@
 #' @param print_checkpoints When TRUE, runtimes and other info will be
 #' printed at certain points throughout the function.
 #' @param checks A list of all the checks that should take place. The default is
-#' to check for every constraint possible in the OZFS. These constraints can found
+#' to check for every constraint possible in the OZFS. These constraints can be found
 #' in the package data `possible_checks`. Note, if a zoning file doesn't have zoning
 #' info for one of the constraints listed in the checks variable, then it is
 #' assumed that building characteristic is allowed.
@@ -144,6 +144,18 @@ zr_run_zoning_checks <- function(bldg_file,
     # make res_types_allowed a list so that it will bind properly
     zone_sf$res_types_allowed <- zone_sf$res_types_allowed |> as.list()
 
+    if (is.null(zone_sf$overlay)){
+      zone_sf$overlay <- FALSE
+    } else{
+      zone_sf$overlay[is.na(zone_sf$overlay)] <- FALSE
+    }
+
+    if (is.null(zone_sf$planned_dev)){
+      zone_sf$planned_dev <- FALSE
+    } else{
+      zone_sf$planned_dev[is.na(zone_sf$planned_dev)] <- FALSE
+    }
+
     # add the zoning df to a list that will later be bound into one df
     zoning_sf_list[[zoning_files_num]] <- zone_sf
   }
@@ -152,10 +164,10 @@ zr_run_zoning_checks <- function(bldg_file,
 
   # get just the overlay districts with geometry
   overlays <- zoning_all_sf |>
-    dplyr::filter(overlay == TRUE)
+    dplyr::filter(overlay != FALSE)
   # get just the pd_districts with geometry
   pd_districts <- zoning_all_sf |>
-    dplyr::filter(planned_dev == TRUE)
+    dplyr::filter(planned_dev != FALSE)
   # get just the base districts with geometry note some base districts will be PD districts
   # this is the one I will use for most of the checks
   zoning_sf <- zoning_all_sf |>
@@ -318,8 +330,7 @@ zr_run_zoning_checks <- function(bldg_file,
       false_parcels <- parcel_df |>
         dplyr::filter(check_pd == FALSE)
       # Add the false_parcels to the false_df list
-      false_df[[false_df_idx]] <- false_parcels
-      false_df_idx <- false_df_idx + 1
+      false_df[["pd_check"]] <- false_parcels
 
       parcel_df <- parcel_df |>
         dplyr::filter(check_pd == TRUE)
@@ -338,12 +349,19 @@ zr_run_zoning_checks <- function(bldg_file,
 
 
   # GET ZONING REQUIREMENTS AND VARIABLES
-  # this loop also creates a vector of parcels with not setback info to be used later
+  # this loop also creates a vector of parcels with no setback info to be used later
   zone_req_var_time <- proc.time()[[3]]
 
   vars_list <- list()
   zoning_req_list <- list()
   parcels_no_setbacks <- c()
+
+  # in the rare case that parcel_df has no rows, that means that
+  # no parcels made it past the pd district check.
+  if (nrow(parcel_df) == 0){
+    stop("No parcel made it past the Planned Development check. Either all parcels are in a planned development, or the parcels and districts don't align.")
+  }
+
   for (row_num in 1:nrow(parcel_df)){
     parcel_data <- parcel_df[row_num,]
     parcel_id <- as.character(parcel_data$parcel_id)
@@ -481,8 +499,7 @@ zr_run_zoning_checks <- function(bldg_file,
     false_parcels <- parcel_df[!is.na(parcel_df$false_reasons),]
     parcel_df <- parcel_df[is.na(parcel_df$false_reasons),]
     # Add the false_parcels to the false_df list
-    false_df[[false_df_idx]] <- false_parcels
-    false_df_idx <- false_df_idx + 1
+    false_df[["initial_check"]] <- false_parcels
   }
 
   # print checkpoint info
@@ -509,8 +526,7 @@ zr_run_zoning_checks <- function(bldg_file,
     parcel_no_sides <- parcel_df |>
       dplyr::filter(!parcel_id %in% parcels_for_bldg_fit)
 
-    false_df[[false_df_idx]] <- parcel_no_sides
-    false_df_idx <- false_df_idx + 1
+    false_df[["side_label_check"]] <- parcel_no_sides
 
     parcel_df <- parcel_df |>
       dplyr::filter(parcel_id %in% parcels_for_bldg_fit)
@@ -680,8 +696,7 @@ zr_run_zoning_checks <- function(bldg_file,
       false_parcels <- parcel_df[parcel_df[,"bldg_fit"][[1]] == FALSE,]
       parcel_df <- parcel_df[parcel_df[,"bldg_fit"][[1]] %in% c(TRUE, "MAYBE"),]
       # Add the false_parcels to the false_df list
-      false_df[[false_df_idx]] <- false_parcels
-      false_df_idx <- false_df_idx + 1
+      false_df[["fit_check"]] <- false_parcels
     }
 
     # print checkpoint info
@@ -695,30 +710,44 @@ zr_run_zoning_checks <- function(bldg_file,
 
   }
 
-  # OVERLAY CHECK
-  overlay_time <- proc.time()[[3]]
-  # of the parcels that pass all the checks,
-  # the ones in an overlay district will be marked as "MAYBE"
-  if (nrow(overlays) > 0 & "overlay" %in% checks){ # if there are overlays
-    # make the df with the overlay district indexes
-    parcels_overlays <- parcels_overlays |>
-      dplyr::filter(!is.na(overlay_id))
-
-    overlay_parcels <- unique(parcels_overlays$parcel_id)
-
-    parcel_df <- parcel_df |>
-      dplyr::mutate(check_overlay = ifelse(parcel_id %in% overlay_parcels,"MAYBE", TRUE),
-                    maybe_reasons = ifelse(parcel_id %in% overlay_parcels, ifelse(!is.na(maybe_reasons),paste(maybe_reasons, "overlay", sep = ", "),"overlay"), maybe_reasons))
-
-    # print checkpoint info
-    if (print_checkpoints){
-      time_lapsed <- proc.time()[[3]] - overlay_time
-      cat(ifelse(time_lapsed > 60,
-                 paste0("___overlay_check___(",round(time_lapsed / 60,2), " min)\n"),
-                 paste0("___overlay_check___(",round(time_lapsed,1), " sec)\n")))
-      cat(paste(length(parcel_df$zoning_id[parcel_df$check_overlay == TRUE]),"parcels in overlay districts\n\n"))
-    }
-  }
+  # # OVERLAY CHECK
+  # overlay_time <- proc.time()[[3]]
+  # # of the parcels that pass all the checks,
+  # # the ones in an overlay district will be marked as "MAYBE"
+  # if (nrow(overlays) > 0 & "overlay" %in% checks){ # if there are overlays
+  #   # make the df with the overlay district indexes
+  #   parcels_overlays <- parcels_overlays |>
+  #     dplyr::filter(!is.na(overlay_id))
+  #
+  #   overlay_parcels <- unique(parcels_overlays$parcel_id)
+  #
+  #   ##### added things
+  #
+  #   overlay_parcels_df <- parcel_df |>
+  #     dplyr::filter(parcel_id %in% overlay_parcels)
+  #
+  #
+  #
+  #
+  #
+  #   ##### end of added things
+  #
+  #
+  #
+  #
+  #   parcel_df <- parcel_df |>
+  #     dplyr::mutate(check_overlay = ifelse(parcel_id %in% overlay_parcels,"MAYBE", TRUE),
+  #                   maybe_reasons = ifelse(parcel_id %in% overlay_parcels, ifelse(!is.na(maybe_reasons),paste(maybe_reasons, "overlay", sep = ", "),"overlay"), maybe_reasons))
+  #
+  #   # print checkpoint info
+  #   if (print_checkpoints){
+  #     time_lapsed <- proc.time()[[3]] - overlay_time
+  #     cat(ifelse(time_lapsed > 60,
+  #                paste0("___overlay_check___(",round(time_lapsed / 60,2), " min)\n"),
+  #                paste0("___overlay_check___(",round(time_lapsed,1), " sec)\n")))
+  #     cat(paste(length(parcel_df$zoning_id[parcel_df$check_overlay == TRUE]),"parcels in overlay districts\n\n"))
+  #   }
+  # }
   ########----END CHECKS----########
 
 
@@ -730,7 +759,12 @@ zr_run_zoning_checks <- function(bldg_file,
            false_reasons = ifelse(is.na(false_reasons), "", false_reasons))
   class(parcel_df$false_reasons) <- "character"
   class(parcel_df$maybe_reasons) <- "character"
-  final_df <- dplyr::bind_rows(false_df, parcel_df)
+  if (nrow(parcel_df) > 0){
+    final_df <- dplyr::bind_rows(false_df) |>
+      dplyr::bind_rows(parcel_df)
+  } else{
+    final_df <- dplyr::bind_rows(false_df)
+  }
   final_without_geom <- sf::st_drop_geometry(final_df)
   final_df$has_false <- rowSums(final_without_geom == FALSE, na.rm = T)
   final_df$has_maybe <- rowSums(final_without_geom == "MAYBE", na.rm = T)
@@ -745,9 +779,238 @@ zr_run_zoning_checks <- function(bldg_file,
                                          "Building allowed"))) |>
     dplyr::select(!c("has_false","has_maybe"))
 
+
+  ################################
+  ######## I think I want to put the overlay stuff here
+
+  parcels_overlays <- parcels_overlays |>
+    dplyr::filter(!is.na(overlay_id))
+
+  overlay_parcels <- unique(parcels_overlays$parcel_id)
+
+  parcels_overlays$overlay_type <- overlays$overlay[parcels_overlays$overlay_id]
+
+  overlay_types <- parcels_overlays |>
+    dplyr::select(parcel_id, overlay_type) |>
+    sf::st_drop_geometry()
+
+  overlay_df <- final_df |>
+    # just select relevent columns
+    dplyr::select(parcel_id, false_reasons, allowed) |>
+    # filter out the ones that are already FALSE because they are in PD districts
+    dplyr::filter(grepl("PD_dist",false_reasons) == FALSE) |>
+    dplyr::filter(grepl("PD_overlay",false_reasons) == FALSE) |>
+    # add a column to label the ones that are covered by an overlay
+    dplyr::mutate(has_overlay = parcel_id %in% overlay_parcels) |>
+    # join overlay_types df to list the type of overlay stated in the OZFS
+    dplyr::left_join(overlay_types, by = dplyr::join_by(parcel_id)) |>
+    # do some logic to see if the result changes based on overly type
+    dplyr::mutate(allowed_now = dplyr::case_when(
+      # if ambiguous
+      allowed == "MAYBE" ~ "MAYBE",
+      # if building meets base requirements
+      allowed == "TRUE" & is.na(overlay_type) ~ "TRUE",
+      allowed == "TRUE" & overlay_type == "no-residentail-effect" ~ "TRUE",
+      allowed == "TRUE" & overlay_type == "replace" ~ "MAYBE",
+      allowed == "TRUE" & overlay_type == "relax" ~ "TRUE",
+      allowed == "TRUE" & overlay_type == "restrict" ~ "MAYBE",
+      allowed == "TRUE" & overlay_type == "demolition-only" ~ "TRUE",
+      # if building doesn't meet base requirements
+      allowed == "FALSE" & is.na(overlay_type) ~ "FALSE",
+      allowed == "FALSE" & overlay_type == "no-residentail-effect" ~ "FALSE",
+      allowed == "FALSE" & overlay_type == "replace" ~ "MAYBE", # check fit on parcel
+      allowed == "FALSE" & overlay_type == "relax" ~ "MAYBE", # check fit on parcel
+      allowed == "FALSE" & overlay_type == "restrict" ~ "FALSE",
+      allowed == "FALSE" & overlay_type == "demolition-only" ~ "FALSE",
+      TRUE ~ "FALSE"
+    ))
+
+  # overlay_df$allowed_now[3:6] <- "MAYBE"
+  # overlay_df$overlay_type[3:6] <- "relax"
+  # overlay_df$has_overlay[3:6] <- "TRUE"
+
+  # get the rows that changed from FALSE to MAYBE with overlays
+  # we will have to recheck to see if the building fits in the parcel without setbacks
+  overlay_maybes <- overlay_df |>
+    dplyr::filter(allowed == FALSE & allowed_now == "MAYBE")
+
+  # check their footprint against whole parcel
+  if (nrow(overlay_maybes) > 0){
+    overlay_foot_start_time <- proc.time()[[3]]
+    error_parcels <- c()
+    for (z in 1:nrow(overlay_maybes)){
+      parcel_data <- overlay_maybes[z,]
+      parcel_name <- parcel_data$parcel_id
+      district_data <- zoning_sf[parcel_data$zoning_id,]
+      zoning_req <- zoning_req_list[[parcel_data$parcel_id]]
+      vars <- vars_list[[parcel_data$parcel_id]]
+
+      # if the footprint area is smaller than the parcel area,
+      # then run the check_fit function
+      if (vars$lot_cov_bldg <= 100){
+        parcel_sides <- tryCatch(
+          {
+            parcel_geo |>
+              dplyr::filter(parcel_id == parcel_data$parcel_id)
+          }, error = function(e) {
+            error <- "error"
+            class(error) <- "error"
+            return(error)
+          }
+        )
+
+        if (inherits(parcel_sides, "error")){
+          error_parcels <- c(error_parcels, parcel_name)
+        }
+
+        parcel_with_setbacks <- tryCatch(
+          {
+            zr_add_setbacks(parcel_sides, district_data, zoning_req)
+          }, error = function(e) {
+            error <- "error"
+            class(error) <- "error"
+            return(error)
+          }
+        )
+
+        if (inherits(parcel_with_setbacks, "error")){
+          error_parcels <- c(error_parcels, parcel_name)
+        }
+
+        parcel_with_setbacks$setback <- NA
+
+        buildable_area <- tryCatch(
+          {
+            zr_get_buildable_area(parcel_with_setbacks, crs)
+          }, error = function(e) {
+            error <- "error"
+            class(error) <- "error"
+            return(error)
+          }
+        )
+
+        if (inherits(buildable_area, "error")){
+          error_parcels <- c(error_parcels, parcel_name)
+        }
+
+        check <- tryCatch(
+          {
+            zr_check_fit(bldg_data, sf::st_make_valid(buildable_area[[1]]), crs = crs)
+          }, error = function(e) {
+            error <- "error"
+            class(error) <- "error"
+            return(error)
+          }
+        )
+
+        if (inherits(check, "error")){
+          error_parcels <- c(error_parcels, parcel_name)
+          check <- "MAYBE"
+        }
+
+      } else{
+        check <- FALSE
+      }
+
+      overlay_maybes[z, "bldg_fit"] <- as.character(check)
+
+      # if the check returns FALSE or MAYBE,
+      # then write the function name in the reasons column
+      # if (check == "MAYBE"){
+      #   overlay_maybes[z,"maybe_reasons"] <- ifelse(is.na(overlay_maybes[[z,"maybe_reasons"]]), "bldg_fit_overlay", paste(overlay_maybes[[z,"maybe_reasons"]], "bldg_fit_overlay", sep = ", "))
+      # }
+      #
+      # if (check == FALSE){
+      #   overlay_maybes[z,"false_reasons"] <- ifelse(is.na(overlay_maybes[[z,"false_reasons"]]), "bldg_fit_overlay", paste(overlay_maybes[[z,"false_reasons"]], "bldg_fit_overlay", sep = ", "))
+      # }
+    }
+
+    if (length(error_parcels > 0)){
+      warning(paste0("The following parcels were marked as MAYBE because they produced errors during zr_check_fit:\n", paste(unique(error_parcels),collapse = "\n")))
+    }
+
+    # print checkpoint info
+    if (print_checkpoints){
+      time_lapsed <- proc.time()[[3]] - overlay_foot_start_time
+      cat(ifelse(time_lapsed > 60,
+                 paste0("___bldg_fit_overlays___(",round(time_lapsed / 60,2), " min)\n"),
+                 paste0("___bldg_fit_overlays___(",round(time_lapsed,1), " sec)\n")))
+      cat(paste(length(which(overlay_maybes[,"bldg_fit_overlay"][[1]] %in% c(TRUE, 'MAYBE'))),"parcels are TRUE or MAYBE\n\n"))
+    }
+
+  }
+
+
+  #### change results based on overlay status ####
+
+  # get a df of just the overlays
+  overlay_check_df <- overlay_df |>
+    sf::st_drop_geometry() |>
+    dplyr::filter(has_overlay == "TRUE") |>
+    dplyr::select(parcel_id, overlay_check = allowed_now)
+
+  if (nrow(overlay_check_df) > 0){
+
+    # get a df of just the overlays that were retested for fit
+    if (nrow(overlay_maybes) > 0){
+      overlay_bldg_fit <- overlay_maybes |>
+        sf::st_drop_geometry() |>
+        dplyr::select(parcel_id, overlay_bldg_fit = bldg_fit)
+
+    } else{
+      overlay_bldg_fit <- data.frame(parcel_id = "id", overlay_bldg_fit = "maybe") |>
+        dplyr::filter(parcel_id < 0)
+    }
+
+    new_final_df <- final_df |>
+      # add the overlay_check column
+      dplyr::left_join(overlay_check_df, by = dplyr::join_by("parcel_id")) |>
+      # add the overlay_bldg_fit column
+      dplyr::left_join(overlay_bldg_fit, by = dplyr::join_by("parcel_id")) |>
+      # create an overlay column to give the results of the overlay check
+      dplyr::mutate(overlay = dplyr::case_when(
+        is.na(overlay_bldg_fit) ~ overlay_check,
+        overlay_bldg_fit == "FALSE" ~ "FALSE",
+        overlay_bldg_fit == "TRUE" ~ "MAYBE",
+        TRUE ~ "TRUE"
+      )) |>
+      # update the reason column in case there was an overlay that changed it
+      dplyr::mutate(reason = dplyr::case_when(
+        is.na(overlay_bldg_fit) ~ reason,
+        overlay_bldg_fit == "TRUE" ~ ifelse(is.na(reason), "bldg_fit_overlay", paste(reason, "bldg_fit_overlay", sep = ", ")),
+        overlay_bldg_fit == "FALSE" ~ ifelse(is.na(reason), "overlay", paste(reason, "overlay", sep = ", "))
+      )) |>
+      # update the false_reasons column in case there is an overlay reason to add
+      dplyr::mutate(false_reasons = dplyr::case_when(
+        is.na(overlay_bldg_fit) ~ false_reasons,
+        overlay_bldg_fit == "FALSE" ~ ifelse(is.na(false_reasons), "overlay", paste(false_reasons, "overlay", sep = ", ")),
+        TRUE ~ false_reasons
+      )) |>
+      # update the maybe_reasons column in case there is an overlay reason to add
+      dplyr::mutate(maybe_reasons = dplyr::case_when(
+        is.na(overlay_bldg_fit) ~ maybe_reasons,
+        overlay_bldg_fit == "TRUE" ~ ifelse(is.na(maybe_reasons), "bldg_fit_overlay", paste(maybe_reasons, "bldg_fit_overlay", sep = ", ")),
+        TRUE ~ maybe_reasons
+      )) |>
+      # mutate the allowed column to update the values that were changed by overlay info
+      dplyr::mutate(allowed = as.character(allowed)) |>
+      dplyr::mutate(allowed = dplyr::case_when(
+        is.na(overlay_bldg_fit) & is.na(overlay_check) ~ allowed,
+        is.na(overlay_bldg_fit) ~ overlay_check,
+        overlay_bldg_fit == "TRUE" ~ "MAYBE",
+        overlay_bldg_fit == "FALSE" ~ "FALSE",
+        TRUE ~ overlay_check
+      ))
+
+  } else{
+    new_final_df <- final_df
+  }
+
+
+
   # select only the columns needed depending on whether detailed check is TRUE or FALSE
   if (detailed_check == FALSE){
-    final_df <- final_df |>
+    final_result <- new_final_df |>
       dplyr::select(dplyr::any_of(c("parcel_id",
                                     "muni_name",
                                     "dist_abbr",
@@ -755,7 +1018,7 @@ zr_run_zoning_checks <- function(bldg_file,
                                     "reason",
                                     "geometry")))
   } else{
-    final_df <- final_df |>
+    final_result <- new_final_df |>
       dplyr::select(!dplyr::any_of(c("maybe_reasons",
                                      "false_reasons",
                                      "lot_width",
@@ -764,7 +1027,9 @@ zr_run_zoning_checks <- function(bldg_file,
                                      "lot_type",
                                      "zoning_id",
                                      "pd_id",
-                                     "overlay_id")))
+                                     "overlay_id",
+                                     "overlay_check",
+                                     "overlay_bldg_fit")))
   }
 
 
@@ -772,14 +1037,14 @@ zr_run_zoning_checks <- function(bldg_file,
   # these are the few parcels that had two districts overlapping
 
   # get duplicate parcel_id names
-  duplicates <- unique(final_df$parcel_id[duplicated(final_df$parcel_id)])
+  duplicates <- unique(final_result$parcel_id[duplicated(final_result$parcel_id)])
 
   if (length(duplicates) > 0){
 
     warning(paste(length(duplicates),"parcels are covered by multiple base districts and are duplicated in results to account for each of those base districts. (see is_duplicate column)"))
 
-    final_df$is_duplicate[duplicated(final_df$parcel_id) | duplicated(final_df$parcel_id, fromLast = TRUE)] <- TRUE
-    final_df$is_duplicate[is.na(final_df$is_duplicate)] <- FALSE
+    final_result$is_duplicate[duplicated(final_result$parcel_id) | duplicated(final_result$parcel_id, fromLast = TRUE)] <- TRUE
+    final_result$is_duplicate[is.na(final_result$is_duplicate)] <- FALSE
 
   }
 
@@ -790,9 +1055,9 @@ zr_run_zoning_checks <- function(bldg_file,
   if (print_checkpoints){
     cat("_____summary_____\n")
     cat(paste0("total runtime: ", round(total_time,1), " sec (",round(total_time / 60,2)," min)\n"))
-    cat(paste(length(which(final_df$allowed == TRUE)), "/", nrow(final_df), "parcels allow the building\n"))
-    if (length(which(final_df$allowed == "MAYBE")) > 0){
-      cat(paste(length(which(final_df$allowed == "MAYBE")), "/", nrow(final_df), "parcels might allow the building\n\n\n"))
+    cat(paste(length(which(final_result$allowed == TRUE)), "/", nrow(final_result), "parcels allow the building\n"))
+    if (length(which(final_result$allowed == "MAYBE")) > 0){
+      cat(paste(length(which(final_result$allowed == "MAYBE")), "/", nrow(final_result), "parcels might allow the building\n\n\n"))
     }
   } else{
     cat("zoning checks finished\n")
@@ -812,19 +1077,19 @@ zr_run_zoning_checks <- function(bldg_file,
         new_name <- gsub("\\.", "_", new_name)
         new_file_name <- paste0("/zr_output_",new_name,".geojson")
         new_file_path <- paste0(save_to,"/zr_output_",new_file_name)
-        sf::write_sf(final_df, new_file_path)
+        sf::write_sf(final_result, new_file_path)
         cat(paste("output saved to",new_file_path, "\n"))
       } else{ # a file
         # delete the file and then write it
         file_removed <- file.remove(save_to)
-        sf::write_sf(final_df, save_to)
+        sf::write_sf(final_result, save_to)
         cat(paste("output saved to",save_to, "\n"))
       }
     } else{ # the file does not exist
       # does the directory exist?
       if (file.exists(dirname(save_to))){ # directory exists
         # save the file
-        sf::write_sf(final_df, save_to)
+        sf::write_sf(final_result, save_to)
         cat(paste("output saved to",save_to, "\n"))
       } else{ # directory doesn't exist
         # warning
@@ -833,12 +1098,12 @@ zr_run_zoning_checks <- function(bldg_file,
     }
   }
 
-  if (!is.null(final_df$lot_area.1)){
-    names(final_df)[names(final_df) == "lot_area.1"] <- "lot_area"
+  if (!is.null(final_result$lot_area.1)){
+    names(final_result)[names(final_result) == "lot_area.1"] <- "lot_area"
   }
 
   # Return the final data frame
   # It will contain every parcel with an "allowed" column and a "reason" column
-  return(final_df)
+  return(final_result)
 
 }
