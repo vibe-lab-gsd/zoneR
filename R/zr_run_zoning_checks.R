@@ -710,48 +710,6 @@ zr_run_zoning_checks <- function(bldg_file,
 
   }
 
-  # # OVERLAY CHECK
-  # overlay_time <- proc.time()[[3]]
-  # # of the parcels that pass all the checks,
-  # # the ones in an overlay district will be marked as "MAYBE"
-  # if (nrow(overlays) > 0 & "overlay" %in% checks){ # if there are overlays
-  #   # make the df with the overlay district indexes
-  #   parcels_overlays <- parcels_overlays |>
-  #     dplyr::filter(!is.na(overlay_id))
-  #
-  #   overlay_parcels <- unique(parcels_overlays$parcel_id)
-  #
-  #   ##### added things
-  #
-  #   overlay_parcels_df <- parcel_df |>
-  #     dplyr::filter(parcel_id %in% overlay_parcels)
-  #
-  #
-  #
-  #
-  #
-  #   ##### end of added things
-  #
-  #
-  #
-  #
-  #   parcel_df <- parcel_df |>
-  #     dplyr::mutate(check_overlay = ifelse(parcel_id %in% overlay_parcels,"MAYBE", TRUE),
-  #                   maybe_reasons = ifelse(parcel_id %in% overlay_parcels, ifelse(!is.na(maybe_reasons),paste(maybe_reasons, "overlay", sep = ", "),"overlay"), maybe_reasons))
-  #
-  #   # print checkpoint info
-  #   if (print_checkpoints){
-  #     time_lapsed <- proc.time()[[3]] - overlay_time
-  #     cat(ifelse(time_lapsed > 60,
-  #                paste0("___overlay_check___(",round(time_lapsed / 60,2), " min)\n"),
-  #                paste0("___overlay_check___(",round(time_lapsed,1), " sec)\n")))
-  #     cat(paste(length(parcel_df$zoning_id[parcel_df$check_overlay == TRUE]),"parcels in overlay districts\n\n"))
-  #   }
-  # }
-  ########----END CHECKS----########
-
-
-
   ########----FINALIZING THINGS----########
   # combined all the false_df and the parcel_df
   parcel_df <- parcel_df |>
@@ -825,9 +783,6 @@ zr_run_zoning_checks <- function(bldg_file,
       TRUE ~ "FALSE"
     ))
 
-  # overlay_df$allowed_now[3:6] <- "MAYBE"
-  # overlay_df$overlay_type[3:6] <- "relax"
-  # overlay_df$has_overlay[3:6] <- "TRUE"
 
   # get the rows that changed from FALSE to MAYBE with overlays
   # we will have to recheck to see if the building fits in the parcel without setbacks
@@ -914,15 +869,6 @@ zr_run_zoning_checks <- function(bldg_file,
 
       overlay_maybes[z, "bldg_fit"] <- as.character(check)
 
-      # if the check returns FALSE or MAYBE,
-      # then write the function name in the reasons column
-      # if (check == "MAYBE"){
-      #   overlay_maybes[z,"maybe_reasons"] <- ifelse(is.na(overlay_maybes[[z,"maybe_reasons"]]), "bldg_fit_overlay", paste(overlay_maybes[[z,"maybe_reasons"]], "bldg_fit_overlay", sep = ", "))
-      # }
-      #
-      # if (check == FALSE){
-      #   overlay_maybes[z,"false_reasons"] <- ifelse(is.na(overlay_maybes[[z,"false_reasons"]]), "bldg_fit_overlay", paste(overlay_maybes[[z,"false_reasons"]], "bldg_fit_overlay", sep = ", "))
-      # }
     }
 
     if (length(error_parcels > 0)){
