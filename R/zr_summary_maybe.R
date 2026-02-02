@@ -16,7 +16,7 @@
 zr_summary_maybe <- function(detailed_result,
                              muni = "All"){
 
-  if (!"MABYE" %in% detailed_result$allowed){
+  if (!"MAYBE" %in% detailed_result$allowed){
     return(cat("No MAYBE values found in results\n"))
   }
 
