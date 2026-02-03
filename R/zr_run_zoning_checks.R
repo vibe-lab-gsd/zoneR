@@ -881,7 +881,13 @@ zr_run_zoning_checks <- function(bldg_file,
       cat(ifelse(time_lapsed > 60,
                  paste0("___bldg_fit_overlays___(",round(time_lapsed / 60,2), " min)\n"),
                  paste0("___bldg_fit_overlays___(",round(time_lapsed,1), " sec)\n")))
-      cat(paste(length(which(overlay_maybes[,"bldg_fit_overlay"][[1]] %in% c(TRUE, 'MAYBE'))),"parcels are TRUE or MAYBE\n\n"))
+      cat(paste(
+        length(
+          which(
+            overlay_maybes[,"allowed_now"][[1]] %in% c(TRUE, 'MAYBE')
+            )
+          )
+        ,"parcels are TRUE or MAYBE\n\n"))
     }
 
   }
@@ -912,7 +918,9 @@ zr_run_zoning_checks <- function(bldg_file,
       # add the overlay_check column
       dplyr::left_join(overlay_check_df, by = dplyr::join_by("parcel_id")) |>
       # add the overlay_bldg_fit column
-      dplyr::left_join(overlay_bldg_fit, by = dplyr::join_by("parcel_id")) |>
+      dplyr::left_join(overlay_bldg_fit,
+                       by = dplyr::join_by("parcel_id"),
+                       relationship = "many-to-many") |>
       # create an overlay column to give the results of the overlay check
       dplyr::mutate(overlay = dplyr::case_when(
         is.na(overlay_bldg_fit) ~ overlay_check,
