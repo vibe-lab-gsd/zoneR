@@ -213,17 +213,15 @@ zr_check_unit <- function(district_data, bldg_data, vars){
   unit_info_df$max_ok <- NA
   unit_info_df$permitted <- NA
 
-  # unit_info_df <- unit_info_df[,1:5]
-  #
-  # unit_info_df |>
-  #   dplyr::mutate(min_ok = min > min_val & min < max_val,
-  #                 max_ok = max > min_val & max < max_val)
-
   for (i in 1:nrow(unit_info_df)){
     min_val <- unit_info_df[i,"min"][[1]][[1]]
     max_val <- unit_info_df[i,"max"][[1]][[1]]
     min_req <- unit_info_df[i,"min_val"][[1]][[1]]
     max_req <- unit_info_df[i,"max_val"][[1]][[1]]
+
+    if(is.na(min_req)) {
+      min_req <- 0
+    }
 
     if (length(min_req) > 1){
       min_min_check1 <- min_val >= min_req[[1]]
