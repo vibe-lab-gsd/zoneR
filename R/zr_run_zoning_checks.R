@@ -145,9 +145,9 @@ zr_run_zoning_checks <- function(bldg_file,
     zone_sf$res_types_allowed <- zone_sf$res_types_allowed |> as.list()
 
     if (is.null(zone_sf$overlay)){
-      zone_sf$overlay <- FALSE
+      zone_sf$overlay <- "FALSE"
     } else{
-      zone_sf$overlay[is.na(zone_sf$overlay)] <- FALSE
+      zone_sf$overlay[is.na(zone_sf$overlay)] <- "FALSE"
     }
 
     if (is.null(zone_sf$planned_dev)){
