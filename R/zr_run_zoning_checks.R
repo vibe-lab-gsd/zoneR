@@ -899,7 +899,19 @@ zr_run_zoning_checks <- function(bldg_file,
   overlay_check_df <- overlay_df |>
     sf::st_drop_geometry() |>
     dplyr::filter(has_overlay == "TRUE") |>
-    dplyr::select(parcel_id, overlay_check = allowed_now)
+
+    # group group duplicate parcels and their results
+    dplyr::group_by(parcel_id) |>
+    dplyr::summarise(comb_check = paste(allowed_now, collapse = " - ")) |>
+
+    # logic to decide what the overall result would be
+    dplyr::mutate(overlay_check = case_when(
+      grepl("FALSE",comb_check) ~ "FALSE",
+      grepl("MAYBE",comb_check) ~ "MAYBE",
+      TRUE ~ "TRUE")) |>
+
+    #select only necessary columns
+    dplyr::select(parcel_id, overlay_check)
 
   if (nrow(overlay_check_df) > 0){
 
@@ -919,8 +931,7 @@ zr_run_zoning_checks <- function(bldg_file,
       dplyr::left_join(overlay_check_df, by = dplyr::join_by("parcel_id")) |>
       # add the overlay_bldg_fit column
       dplyr::left_join(overlay_bldg_fit,
-                       by = dplyr::join_by("parcel_id"),
-                       relationship = "many-to-many") |>
+                       by = dplyr::join_by("parcel_id")) |>
       # create an overlay column to give the results of the overlay check
       dplyr::mutate(overlay = dplyr::case_when(
         is.na(overlay_bldg_fit) ~ overlay_check,
