@@ -786,7 +786,18 @@ zr_run_zoning_checks <- function(bldg_file,
 
   # get the rows that changed from FALSE to MAYBE with overlays
   # we will have to recheck to see if the building fits in the parcel without setbacks
-  overlay_maybes <- overlay_df |>
+  overlay_maybes <- overlay_df|>
+
+    # group group duplicate parcels and their results
+    dplyr::group_by(parcel_id) |>
+    dplyr::summarise(allowed = allowed[[1]], comb_check = paste(allowed_now, collapse = " - ")) |>
+
+    # logic to decide what the overall result would be
+    dplyr::mutate(allowed_now = dplyr::case_when(
+      grepl("FALSE",comb_check) ~ "FALSE",
+      grepl("MAYBE",comb_check) ~ "MAYBE",
+      TRUE ~ "TRUE")) |>
+
     dplyr::filter(allowed == FALSE & allowed_now == "MAYBE")
 
   # check their footprint against whole parcel
@@ -796,7 +807,6 @@ zr_run_zoning_checks <- function(bldg_file,
     for (z in 1:nrow(overlay_maybes)){
       parcel_data <- overlay_maybes[z,]
       parcel_name <- parcel_data$parcel_id
-      district_data <- zoning_sf[parcel_data$zoning_id,]
       zoning_req <- zoning_req_list[[parcel_data$parcel_id]]
       vars <- vars_list[[parcel_data$parcel_id]]
 
@@ -818,20 +828,7 @@ zr_run_zoning_checks <- function(bldg_file,
           error_parcels <- c(error_parcels, parcel_name)
         }
 
-        parcel_with_setbacks <- tryCatch(
-          {
-            zr_add_setbacks(parcel_sides, district_data, zoning_req)
-          }, error = function(e) {
-            error <- "error"
-            class(error) <- "error"
-            return(error)
-          }
-        )
-
-        if (inherits(parcel_with_setbacks, "error")){
-          error_parcels <- c(error_parcels, parcel_name)
-        }
-
+        parcel_with_setbacks <- parcel_sides
         parcel_with_setbacks$setback <- NA
 
         buildable_area <- tryCatch(
