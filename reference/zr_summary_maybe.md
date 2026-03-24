@@ -37,24 +37,29 @@ just_check_height <- zr_run_zoning_checks(bldg_file = bldg_file,
                                           parcel_files = parcel_file,
                                           zoning_files = zoning_file,
                                           checks = "height")
-#> ___data_prep___(0.4 sec)
+#> ___data_prep___(0.2 sec)
 #> 
-#> ___get_zoning_req___(2.3 sec)
+#> ___get_zoning_req___(2.7 sec)
 #> 
-#> ___initial_checks___(1.2 sec)
+#> ___initial_checks___(1.5 sec)
 #> 97 parcels are TRUE or MAYBE
 #> 
-#> Error in dplyr::mutate(dplyr::summarise(dplyr::group_by(dplyr::filter(sf::st_drop_geometry(overlay_df),     has_overlay == "TRUE"), parcel_id), comb_check = paste(allowed_now,     collapse = " - ")), overlay_check = case_when(grepl("FALSE",     comb_check) ~ "FALSE", grepl("MAYBE", comb_check) ~ "MAYBE",     TRUE ~ "TRUE")): ℹ In argument: `overlay_check = case_when(...)`.
-#> Caused by error in `case_when()`:
-#> ! could not find function "case_when"
+#> _____summary_____
+#> total runtime: 5.7 sec (0.09 min)
+#> 97 / 421 parcels allow the building
 
 zr_summary_by_muni(just_check_height)
-#> Error: object 'just_check_height' not found
+#> # A tibble: 2 × 4
+#>   muni_name num_allowed num_maybe num_prohib
+#>   <chr>           <int>     <int>      <int>
+#> 1 Paradise           97         0        324
+#> 2 Total              97         0        324
 
 zr_summary_false(just_check_height)
-#> Error: object 'just_check_height' not found
+#>          Reason for prohibition Number of parcels
+#> 1 Non-compliant building height               324
 
 zr_summary_maybe(just_check_height)
-#> Error: object 'just_check_height' not found
+#> No MAYBE values found in results
 
 ```

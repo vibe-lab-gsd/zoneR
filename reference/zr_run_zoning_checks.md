@@ -91,12 +91,12 @@ just_check_height <- zr_run_zoning_checks(bldg_file = bldg_file,
                                           checks = "height")
 #> ___data_prep___(0.2 sec)
 #> 
-#> ___get_zoning_req___(2.5 sec)
+#> ___get_zoning_req___(2.4 sec)
 #> 
 #> ___initial_checks___(1.3 sec)
 #> 97 parcels are TRUE or MAYBE
 #> 
-#> Error in dplyr::mutate(dplyr::summarise(dplyr::group_by(dplyr::filter(sf::st_drop_geometry(overlay_df),     has_overlay == "TRUE"), parcel_id), comb_check = paste(allowed_now,     collapse = " - ")), overlay_check = case_when(grepl("FALSE",     comb_check) ~ "FALSE", grepl("MAYBE", comb_check) ~ "MAYBE",     TRUE ~ "TRUE")): ℹ In argument: `overlay_check = case_when(...)`.
-#> Caused by error in `case_when()`:
-#> ! could not find function "case_when"
+#> _____summary_____
+#> total runtime: 5.2 sec (0.09 min)
+#> 97 / 421 parcels allow the building
 ```
