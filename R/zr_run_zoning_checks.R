@@ -902,7 +902,7 @@ zr_run_zoning_checks <- function(bldg_file,
     dplyr::summarise(comb_check = paste(allowed_now, collapse = " - ")) |>
 
     # logic to decide what the overall result would be
-    dplyr::mutate(overlay_check = case_when(
+    dplyr::mutate(overlay_check = dplyr::case_when(
       grepl("FALSE",comb_check) ~ "FALSE",
       grepl("MAYBE",comb_check) ~ "MAYBE",
       TRUE ~ "TRUE")) |>
@@ -922,7 +922,7 @@ zr_run_zoning_checks <- function(bldg_file,
         dplyr::summarise(comb_check = paste(bldg_fit, collapse = " - ")) |>
 
         # logic to decide what the overall result would be
-        dplyr::mutate(overlay_bldg_fit = case_when(
+        dplyr::mutate(overlay_bldg_fit = dplyr::case_when(
           grepl("FALSE",comb_check) ~ "FALSE",
           grepl("MAYBE",comb_check) ~ "MAYBE",
           TRUE ~ "TRUE")) |>
