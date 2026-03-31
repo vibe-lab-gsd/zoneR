@@ -889,7 +889,6 @@ zr_run_zoning_checks <- function(bldg_file,
 
   }
 
-
   #### change results based on overlay status ####
 
   # get a df of just the overlays
@@ -981,8 +980,6 @@ zr_run_zoning_checks <- function(bldg_file,
   } else{
     new_final_df <- final_df
   }
-
-
 
   # select only the columns needed depending on whether detailed check is TRUE or FALSE
   if (detailed_check == FALSE){
