@@ -173,7 +173,6 @@ zr_run_zoning_checks <- function(bldg_file,
   zoning_sf <- zoning_all_sf |>
     dplyr::filter(overlay == FALSE)
 
-
   # get appropriate crs in meters to use in the check footprint function
   crs <- zr_get_crs(zoning_sf)
 
@@ -273,6 +272,12 @@ zr_run_zoning_checks <- function(bldg_file,
   # start a list that will store the false data frames of the check functions
   false_df <- list()
   false_df_idx <- 1
+
+
+
+    ###################### OVERLAY STUFF SHOULD GO HERE ###########################
+
+
   ########----END DATA PREP----########
 
   # print checkpoint info
@@ -283,7 +288,7 @@ zr_run_zoning_checks <- function(bldg_file,
            paste0("___data_prep___(",round(time_lapsed,1), " sec)\n\n")))
   }
   ########----START CHECKS----########
-  # PLANNED DEVELOPMENT CHECK
+  # PLANNED DEVELOPMENT CHECK <------- after overlay districts are moved here, this will be one check instead of two
   pd_time <- proc.time()[[3]]
   # if parcels are in a planned development, the building is automatically not allowed
   if (nrow(pd_districts) > 0){ # if there are pd_districts
@@ -346,7 +351,6 @@ zr_run_zoning_checks <- function(bldg_file,
     }
 
   }
-
 
   # GET ZONING REQUIREMENTS AND VARIABLES
   # this loop also creates a vector of parcels with no setback info to be used later
@@ -739,7 +743,7 @@ zr_run_zoning_checks <- function(bldg_file,
 
 
   ################################
-  ######## I think I want to put the overlay stuff here
+  ######## I think I want to put the overlay stuff here; 2026: here's the chunk to move earlier. do the math here.
 
   parcels_overlays <- parcels_overlays |>
     dplyr::filter(!is.na(overlay_id))
@@ -1080,3 +1084,4 @@ zr_run_zoning_checks <- function(bldg_file,
   return(final_result)
 
 }
+
