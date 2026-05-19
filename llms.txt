@@ -24,6 +24,7 @@ You can install the development version of zoneR from
 [GitHub](https://github.com/) with:
 
 ``` r
+
 # install.packages("devtools")
 devtools::install_github("vibe-lab-gsd/zoneR")
 ```
@@ -39,6 +40,7 @@ We get the file paths for the example OZFS files using
 [`zr_example_files()`](https://vibe-lab-gsd.github.io/zoneR/reference/zr_example_files.md).
 
 ``` r
+
 library(zoneR)
 #> None of the results of any of the functions in this package are legal advice. We do not guarantee any of it. You should definitely talk to an actual professional of some kind before you start building anything.
 
@@ -52,6 +54,7 @@ We can then put each of the files into the
 function and assign the result to a variable called zoning_checks.
 
 ``` r
+
 zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
                                       parcel_files = parcel_path,
                                       zoning_files = zoning_path)
@@ -76,6 +79,7 @@ following columns: “parcel_id”, “allowed”, “reason”, “geometry.”
 that the geometry is the centroid of the parcel.
 
 ``` r
+
 head(zoning_checks)
 #> Simple feature collection with 6 features and 5 fields
 #> Geometry type: POINT
@@ -110,6 +114,7 @@ the res_type check will be run in this next example. We will also put
 when it is done with the different parts of the function.
 
 ``` r
+
 zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
                                       parcel_files = parcel_path,
                                       zoning_files = zoning_path, 
@@ -129,6 +134,7 @@ Here are a few other constraint checks to visualize.
 Height Check
 
 ``` r
+
 zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
                                       parcel_files = parcel_path,
                                       zoning_files = zoning_path, 
@@ -143,6 +149,7 @@ zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
 Building Fit Check
 
 ``` r
+
 zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
                                       parcel_files = parcel_path,
                                       zoning_files = zoning_path, 
@@ -168,6 +175,7 @@ as the code does not skip consecutive checks if a previous check yields
 FALSE).
 
 ``` r
+
 zoning_checks <- zr_run_zoning_checks(bldg_file = bldg_path,
                                       parcel_files = parcel_path,
                                       zoning_files = zoning_path,
@@ -192,6 +200,7 @@ With these added columns, we can look more closely at why the building
 does not fit in most of the parcels.
 
 ``` r
+
 column_true_sums <- colSums(sf::st_drop_geometry(zoning_checks) == "TRUE", na.rm = TRUE)
 
 ordered_sums <- column_true_sums[order(column_true_sums)]
