@@ -13,7 +13,7 @@
 #'
 #' @examples
 #' zr_example_files()
-#' zr_example_files("Paradise.parcel")
+#' 
 #'
 zr_example_files <- function(file = NULL){
   if (is.null(file)) {
@@ -22,3 +22,5 @@ zr_example_files <- function(file = NULL){
     system.file("extdata", file, package = "zoneR", mustWork = TRUE)
   }
 }
+
+

@@ -1,0 +1,42 @@
+flowchart TD
+    A([Start one building and one parcel]) --> B{Parcel has base zoning district}
+    B -- No --> X1([Excluded or stop not classified])
+    B -- Yes --> C{In planned development district or planned development overlay}
+
+    C -- Yes --> N1([no])
+    C -- No --> D[Build variables and zoning requirements]
+
+    D --> E{Initial checks res_type constraints unit_size}
+    E -- Any FALSE --> N2([no])
+    E -- No FALSE and at least one MAYBE --> M1([maybe])
+    E -- All TRUE --> F{bldg_fit included in checks}
+
+    F -- No --> H[Base allowed yes]
+    F -- Yes --> G{Known side labels or no setbacks}
+
+    G -- No --> M2([maybe reason side_lbl])
+    G -- Yes --> I{Lot coverage is at most 100 percent}
+
+    I -- No --> N3([no])
+    I -- Yes --> J{Fits in buildable area with setbacks}
+
+    J -- FALSE --> N4([no])
+    J -- MAYBE or error --> M3([maybe reason bldg_fit])
+    J -- TRUE --> H
+
+    H --> K[Base aggregate result yes maybe no]
+
+    K --> L{Overlay present and changes result}
+    L -- No --> R([Final equals base result])
+    L -- Yes --> O{Overlay type mapping}
+
+    O -- Stays TRUE --> Y1([yes])
+    O -- Becomes FALSE --> N5([no])
+    O -- Becomes MAYBE --> P{Was FALSE changed to MAYBE and needs overlay fit retest}
+
+    P -- No --> M4([maybe])
+    P -- Yes --> Q{Fits on whole parcel without setbacks}
+
+    Q -- TRUE --> M5([maybe reason bldg_fit_overlay])
+    Q -- FALSE --> N6([no reason overlay])
+    Q -- error --> M6([maybe])
