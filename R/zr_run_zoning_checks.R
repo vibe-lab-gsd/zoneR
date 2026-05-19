@@ -173,6 +173,9 @@ zr_run_zoning_checks <- function(bldg_file,
   zoning_sf <- zoning_all_sf |>
     dplyr::filter(overlay == FALSE)
 
+  # build hybrid districts by integrating overlay constraints into base district
+  hybrid_zoning_sf <- zr_build_hybrid_districts(zoning_sf, overlays)
+
   # get appropriate crs in meters to use in the check footprint function
   crs <- zr_get_crs(zoning_sf)
 
@@ -273,10 +276,13 @@ zr_run_zoning_checks <- function(bldg_file,
   false_df <- list()
   false_df_idx <- 1
 
-
-
-    ###################### OVERLAY STUFF SHOULD GO HERE ###########################
-
+  # assign hybrid districts to relevant parcels
+  parcel_df <- zr_assign_hybrid_districts(
+    parcel_df = parcel_df,
+    parcels_overlays = parcels_overlays,
+    hybrid_zoning_sf = hybrid_zoning_sf
+  )
+  zoning_sf <- hybrid_zoning_sf
 
   ########----END DATA PREP----########
 
