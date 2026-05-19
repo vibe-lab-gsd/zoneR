@@ -173,7 +173,7 @@ zr_run_zoning_checks <- function(bldg_file,
   zoning_sf <- zoning_all_sf |>
     dplyr::filter(overlay == FALSE)
 
-  # build hybrid districts by integrating overlay constraints into base district
+  # build hybrid districts by integrating overlay constraints into base districts
   hybrid_zoning_sf <- zr_build_hybrid_districts(zoning_sf, overlays)
 
   # get appropriate crs in meters to use in the check footprint function
@@ -234,8 +234,15 @@ zr_run_zoning_checks <- function(bldg_file,
   # use the pd districts to add zoning_id to parcel_dims
   pd_parcel_df <- zr_find_district_idx(parcel_dims, pd_districts, "pd_id")
 
-  # use the overlay districts to add zoning_id to parcel_dims
+  # use the overlay districts to add overlay_id to parcel_dims
   parcels_overlays <- zr_find_district_idx(parcel_dims, overlays, "overlay_id")
+  parcel_dims$overlay_id <- parcels_overlays$overlay_id
+
+  parcel_dims <- zr_assign_hybrid_districts(
+    parcel_dims = parcel_dims,
+    hybrid_zoning_sf = hybrid_zoning_sf
+  )
+  zoning_sf <- hybrid_zoning_sf
 
   zoning_is_na <- parcel_dims$zoning_id |>
     unique() |>
@@ -247,10 +254,10 @@ zr_run_zoning_checks <- function(bldg_file,
 
   # add false_reasons and maybe_reasons columns to parcel_dims (for tracking maybes and falses)
   # filter it to only the parcels that have a base district
-  # add the muni_name and dist_abbr
+  # add the muni_name and dist_abbr (from hybrid catalog after assign)
   # this parcel_df is what we will use for most of the calculations
-  dist_abbr_vec <- zoning_sf$dist_abbr
-  muni_name_vec <- zoning_sf$muni_name
+  dist_abbr_vec <- hybrid_zoning_sf$dist_abbr
+  muni_name_vec <- hybrid_zoning_sf$muni_name
 
   parcel_df <- parcel_dims |>
     dplyr::mutate(false_reasons = as.character(NA),
@@ -275,14 +282,6 @@ zr_run_zoning_checks <- function(bldg_file,
   # start a list that will store the false data frames of the check functions
   false_df <- list()
   false_df_idx <- 1
-
-  # assign hybrid districts to relevant parcels
-  parcel_df <- zr_assign_hybrid_districts(
-    parcel_df = parcel_df,
-    parcels_overlays = parcels_overlays,
-    hybrid_zoning_sf = hybrid_zoning_sf
-  )
-  zoning_sf <- hybrid_zoning_sf
 
   ########----END DATA PREP----########
 
