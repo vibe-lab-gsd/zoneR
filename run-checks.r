@@ -5,8 +5,8 @@
 args <- commandArgs(trailingOnly = TRUE)
 
 bldg_file <- if (length(args) >= 1) args[1] else "inst/extdata/2_fam.bldg"
-parcel_files <- if (length(args) >= 2) args[2] else "inst/extdata/Paradise.parcel"
-zoning_files <- if (length(args) >= 3) args[3] else "inst/extdata/Paradise.zoning"
+parcel_files <- if (length(args) >= 2) args[2] else "inst/extdata/1pct_Fort Worth.parcel"
+zoning_files <- if (length(args) >= 3) args[3] else "inst/extdata/Fort Worth.zoning"
 
 if (!requireNamespace("pkgload", quietly = TRUE)) install.packages("pkgload", repos = "https://cran.rstudio.com")
 if (!requireNamespace("sf", quietly = TRUE)) install.packages("sf", repos = "https://cran.rstudio.com")

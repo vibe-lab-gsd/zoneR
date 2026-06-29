@@ -232,7 +232,19 @@ zr_run_zoning_checks <- function(bldg_file,
   pd_parcel_df <- zr_find_district_idx(parcel_dims, pd_districts, "pd_id")
 
   # use the overlay districts to add zoning_id to parcel_dims
+
   parcels_overlays <- zr_find_district_idx(parcel_dims, overlays, "overlay_id")
+
+  overlay_parcels <- unique(parcels_overlays$parcel_id)
+
+  parcels_overlays$overlay_type <- overlays$overlay[parcels_overlays$overlay_id]
+
+  overlay_types <- parcels_overlays |>
+    dplyr::select(parcel_id, overlay_type) |>
+    sf::st_drop_geometry()
+
+  print(overlay_types)
+
 
   zoning_is_na <- parcel_dims$zoning_id |>
     unique() |>
@@ -288,7 +300,7 @@ zr_run_zoning_checks <- function(bldg_file,
            paste0("___data_prep___(",round(time_lapsed,1), " sec)\n\n")))
   }
   ########----START CHECKS----########
-  # PLANNED DEVELOPMENT CHECK <------- after overlay districts are moved here, this will be one check instead of two
+  # PLANNED DEVELOPMENT CHECK
   pd_time <- proc.time()[[3]]
   # if parcels are in a planned development, the building is automatically not allowed
   if (nrow(pd_districts) > 0){ # if there are pd_districts
@@ -373,6 +385,13 @@ zr_run_zoning_checks <- function(bldg_file,
     zoning_data <- zoning_data_list[[district_data$muni_id]]
     vars <- zr_get_variables(bldg_data, parcel_data, district_data, zoning_data)
     zoning_req <- zr_get_zoning_req(district_data, vars = vars)
+
+    # boolean for if parcel is in an overlay district
+    has_overlay = parcel_id %in% overlay_parcels
+
+    # get overlay type, or NA if none
+    overlay_type = ifelse(has_overlay, overlay_types$overlay_type[match(parcel_id, overlay_types$parcel_id)], NA)
+    print(overlay_type)
 
     # check to see if it has setback and add it to the list
     if (inherits(zoning_req, "character")){
