@@ -173,6 +173,8 @@ zr_run_zoning_checks <- function(bldg_file,
   zoning_sf <- zoning_all_sf |>
     dplyr::filter(overlay == FALSE)
 
+  print(overlays, pd_districts, zoning_sf)
+
   # build hybrid districts by integrating overlay constraints into base districts
   hybrid_zoning_sf <- zr_build_hybrid_districts(zoning_sf, overlays)
 
