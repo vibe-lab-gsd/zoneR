@@ -283,7 +283,7 @@ zr_run_zoning_checks <- function(bldg_file,
            paste0("___data_prep___(",round(time_lapsed,1), " sec)\n\n")))
   }
   ########----START CHECKS----########
-  # PLANNED DEVELOPMENT CHECK
+  ##### PLANNED DEVELOPMENT CHECK #####
   pd_time <- proc.time()[[3]]
   # if parcels are in a planned development, the building is automatically not allowed
   if (nrow(pd_districts) > 0){ # if there are pd_districts
@@ -348,7 +348,7 @@ zr_run_zoning_checks <- function(bldg_file,
   }
 
 
-  # GET ZONING REQUIREMENTS AND VARIABLES
+  ##### GET ZONING REQUIREMENTS AND VARIABLES #####
   # this loop also creates a vector of parcels with no setback info to be used later
   zone_req_var_time <- proc.time()[[3]]
 
@@ -385,6 +385,35 @@ zr_run_zoning_checks <- function(bldg_file,
     zoning_req_list[[parcel_id]] <- zoning_req
   }
 
+
+
+  #### TODO: CHANGE FUNCITON FLOW. OVERLAY HERE ####
+
+  # Is the parcel in an overlay district?
+
+  # What is the overlay key? (i.e. What type of overlay?)
+  #   - "TRUE" indicates that it is an overlay district and that no other information is available (the data standard does not require complete information on overlay districts).
+  #      - Probably just needs to be straight to maybe.
+  #   - "restrict" indicates that the overlay district further restricts the requirements of the base district. In other words, when there is a conflict between the requirements of the base district and the requirements of the overlay district, the more restrictive of the two requirements applies.
+  #      - MOST OF THE WORK WILL BE HERE I THINK
+  #      - Look at the constraints that the overlay may have and replace the base constraints.
+  #      - There may be some more logic after updating the zoning reqs
+  #   - "relax" indicates that the overlay district relaxes the requirements of the base district: when there is a conflict between the requirements of the base district and the requirements of the overlay district, the less restrictive of the two requirements applies.
+  #      - MOST OF THE WORK WILL BE HERE I THINK
+  #      - Look at the constraints that the overlay may have and replace the base constraints.
+  #      - There may be some more logic after updating the zoning reqs
+  #   - "replace" indicates that the requirements of the overlay district replace those of the base districts. In other words, when there is a conflict between the requirements of the overlay district and the base district, the requirements of other overlay district applies (regardless of whether they relax or restrict the requirements of the base district).
+  #      - MOST OF THE WORK WILL BE HERE I THINK
+  #      - Look at the constraints that the overlay may have and replace the base constraints.
+  #      - There may be some more logic after updating the zoning reqs
+  #   - "no_residential_effect" indicates that the overlay district would have no effect on residential developments. As an example, Dallas has overlay districts that prohibit the sale of alcohol, but are not relevant to the question of siting multifamily housing.
+  #      - Continue as normal
+  #   - "demolition_only" indicates that the overlay district places restrictions on what can be demolished, but not on what can be built. Historic preservation districts may fall into this category.
+  #      - Look at vacancy: if vacant, continue as normal. if not vacant, not allow.
+  #   - "none-by-right" indicates that any development within the overlay district requires discretionary approval. These are often (but not always) planned development overlay districts.
+
+
+
   # print checkpoint info
   if (print_checkpoints){
     time_lapsed <- proc.time()[[3]] - zone_req_var_time
@@ -394,7 +423,7 @@ zr_run_zoning_checks <- function(bldg_file,
   }
 
 
-  # INITIAL CHECKS
+  ###### INITIAL CHECKS #####
   # perform all the initial checks
   func_start_time <- proc.time()[[3]]
 
@@ -512,7 +541,7 @@ zr_run_zoning_checks <- function(bldg_file,
   }
 
 
-  # SIDE LABEL CHECK
+  ###### SIDE LABEL CHECK #####
   # if parcels have labeled sides or no setback requirements,
   # we can move on to the fit check
   if ("bldg_fit" %in% checks & nrow(parcel_df) > 0){
@@ -534,7 +563,7 @@ zr_run_zoning_checks <- function(bldg_file,
   }
 
 
-  # FIT CHECK
+  ###### FIT CHECK #####
   # see if the building footprint fits in the parcel's buildable area
 
   if ("bldg_fit" %in% checks & nrow(parcel_df) > 0 & !is.null(parcel_geo)){
@@ -685,7 +714,7 @@ zr_run_zoning_checks <- function(bldg_file,
       }
     }
 
-    if (length(error_parcels > 0)){
+    if (length(error_parcels) > 0){
       warning(paste0("The following parcels were marked as MAYBE because they produced errors during zr_check_fit:\n", paste(unique(error_parcels),collapse = "\n")))
     }
 
@@ -738,8 +767,7 @@ zr_run_zoning_checks <- function(bldg_file,
     dplyr::select(!c("has_false","has_maybe"))
 
 
-  ################################
-  ######## I think I want to put the overlay stuff here
+  #### OVERLAY STUFF ####
 
   parcels_overlays <- parcels_overlays |>
     dplyr::filter(!is.na(overlay_id))
@@ -768,14 +796,14 @@ zr_run_zoning_checks <- function(bldg_file,
       allowed == "MAYBE" ~ "MAYBE",
       # if building meets base requirements
       allowed == "TRUE" & is.na(overlay_type) ~ "TRUE",
-      allowed == "TRUE" & overlay_type == "no-residentail-effect" ~ "TRUE",
+      allowed == "TRUE" & overlay_type == "no-residential-effect" ~ "TRUE",
       allowed == "TRUE" & overlay_type == "replace" ~ "MAYBE",
       allowed == "TRUE" & overlay_type == "relax" ~ "TRUE",
       allowed == "TRUE" & overlay_type == "restrict" ~ "MAYBE",
       allowed == "TRUE" & overlay_type == "demolition-only" ~ "TRUE",
       # if building doesn't meet base requirements
       allowed == "FALSE" & is.na(overlay_type) ~ "FALSE",
-      allowed == "FALSE" & overlay_type == "no-residentail-effect" ~ "FALSE",
+      allowed == "FALSE" & overlay_type == "no-residential-effect" ~ "FALSE",
       allowed == "FALSE" & overlay_type == "replace" ~ "MAYBE", # check fit on parcel
       allowed == "FALSE" & overlay_type == "relax" ~ "MAYBE", # check fit on parcel
       allowed == "FALSE" & overlay_type == "restrict" ~ "FALSE",
@@ -868,7 +896,7 @@ zr_run_zoning_checks <- function(bldg_file,
 
     }
 
-    if (length(error_parcels > 0)){
+    if (length(error_parcels) > 0){
       warning(paste0("The following parcels were marked as MAYBE because they produced errors during zr_check_fit:\n", paste(unique(error_parcels),collapse = "\n")))
     }
 
@@ -907,7 +935,7 @@ zr_run_zoning_checks <- function(bldg_file,
       TRUE ~ "TRUE")) |>
 
     #select only necessary columns
-    dplyr::select(parcel_id, overlay_check)
+    dplyr::select("parcel_id", "overlay_check")
 
   if (nrow(overlay_check_df) > 0){
 
@@ -1037,7 +1065,7 @@ zr_run_zoning_checks <- function(bldg_file,
     cat(cat(paste0("total runtime: ", round(total_time,1), " sec (",round(total_time / 60,2)," min)\n\n\n")))
   }
 
-  # SAVE THE FILE
+  ###### SAVE THE FILE #####
   if (!is.null(save_to)){
     # does the file exist?
     if (file.exists(save_to)){ # the file exists
