@@ -41,6 +41,7 @@
 #'
 #' # get variables
 #' vars <- zr_get_variables(bldg_data, parcel_data, district_data, zoning_data)
+
 zr_get_variables <- function(bldg_data, parcel_data, district_data, zoning_data){
 
   if (class(zoning_data)[[1]] == "character"){

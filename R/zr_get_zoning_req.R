@@ -55,6 +55,7 @@
 #'
 #' # get zoning requirements
 #' zoning_req <- zr_get_zoning_req(district_data = district_data, vars = vars)
+
 zr_get_zoning_req <- function(district_data,
                            bldg_data = NULL,
                            parcel_data = NULL,
@@ -100,6 +101,10 @@ zr_get_zoning_req <- function(district_data,
     for (val_idx in 1:length(constraint_list)){
       val_name <- names(constraint_list)[[val_idx]]
       val_list <- constraint_list[[val_name]]
+
+      if (val_name == "notes"){
+        next
+      }
 
       value <- NA
       note <- NA
