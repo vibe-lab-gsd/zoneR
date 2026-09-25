@@ -48,6 +48,13 @@
 #'                                           parcel_files = parcel_file,
 #'                                           zoning_files = zoning_file,
 #'                                           checks = "height")
+
+
+# bldg_file <- "../2026_Sep_updates/data/2_unit.bldg"
+# parcel_files <- "../2026_Sep_updates/data/1pct_Dallas.parcel"
+# zoning_files <- "../2026_Sep_updates/data/Dallas.zoning"
+
+
 zr_run_zoning_checks <- function(bldg_file,
                                  parcel_files,
                                  zoning_files,
@@ -173,6 +180,23 @@ zr_run_zoning_checks <- function(bldg_file,
   zoning_sf <- zoning_all_sf |>
     dplyr::filter(overlay == FALSE)
 
+  #TODO: DELETE BELOW
+  # I'm making my own zoning constraints for testing purposes
+
+  # constraint1 <- zoning_sf$constraints[[1]]
+  # constraint2 <- zoning_sf$constraints[[4]]
+  #
+  # overlays$constraints[[1]]
+  # unique(overlays$overlay)
+  # overlays[overlays$overlay == "replace",]
+  #
+  # overlays[c(3,7,8),]$constraints <- constraint1
+  # overlays[12:14,]$constraints <- constraint2
+  # overlays[overlays$overlay != "replace",]$constraints <- constraint1
+
+  #TODO: DELETE ABOVE
+
+
 
   # get appropriate crs in meters to use in the check footprint function
   crs <- zr_get_crs(zoning_sf)
@@ -282,6 +306,7 @@ zr_run_zoning_checks <- function(bldg_file,
            paste0("___data_prep___(",round(time_lapsed / 60,2), " min)\n\n"),
            paste0("___data_prep___(",round(time_lapsed,1), " sec)\n\n")))
   }
+
   ########----START CHECKS----########
   ##### PLANNED DEVELOPMENT CHECK #####
   pd_time <- proc.time()[[3]]
@@ -387,30 +412,411 @@ zr_run_zoning_checks <- function(bldg_file,
 
 
 
-  #### TODO: CHANGE FUNCITON FLOW. OVERLAY HERE ####
+  #### OVERLAYS ####
 
-  # Is the parcel in an overlay district?
+  # If overlay is one of the checks, then perform overlay check
+  # This involves updating some base requirements or just not allowing the parcel
+  # depending on the type of overlay(s) that cover the parcel
+  if ("overlay" %in% checks){
+    # dropping geom and adding id col to join it to the overlay parcels df
+    overlays_df <- sf::st_drop_geometry(overlays)
+    overlays_df$overlay_id <- 1:nrow(overlays_df)
 
-  # What is the overlay key? (i.e. What type of overlay?)
-  #   - "TRUE" indicates that it is an overlay district and that no other information is available (the data standard does not require complete information on overlay districts).
-  #      - Probably just needs to be straight to maybe.
-  #   - "restrict" indicates that the overlay district further restricts the requirements of the base district. In other words, when there is a conflict between the requirements of the base district and the requirements of the overlay district, the more restrictive of the two requirements applies.
-  #      - MOST OF THE WORK WILL BE HERE I THINK
-  #      - Look at the constraints that the overlay may have and replace the base constraints.
-  #      - There may be some more logic after updating the zoning reqs
-  #   - "relax" indicates that the overlay district relaxes the requirements of the base district: when there is a conflict between the requirements of the base district and the requirements of the overlay district, the less restrictive of the two requirements applies.
-  #      - MOST OF THE WORK WILL BE HERE I THINK
-  #      - Look at the constraints that the overlay may have and replace the base constraints.
-  #      - There may be some more logic after updating the zoning reqs
-  #   - "replace" indicates that the requirements of the overlay district replace those of the base districts. In other words, when there is a conflict between the requirements of the overlay district and the base district, the requirements of other overlay district applies (regardless of whether they relax or restrict the requirements of the base district).
-  #      - MOST OF THE WORK WILL BE HERE I THINK
-  #      - Look at the constraints that the overlay may have and replace the base constraints.
-  #      - There may be some more logic after updating the zoning reqs
-  #   - "no_residential_effect" indicates that the overlay district would have no effect on residential developments. As an example, Dallas has overlay districts that prohibit the sale of alcohol, but are not relevant to the question of siting multifamily housing.
-  #      - Continue as normal
-  #   - "demolition_only" indicates that the overlay district places restrictions on what can be demolished, but not on what can be built. Historic preservation districts may fall into this category.
-  #      - Look at vacancy: if vacant, continue as normal. if not vacant, not allow.
-  #   - "none-by-right" indicates that any development within the overlay district requires discretionary approval. These are often (but not always) planned development overlay districts.
+    # getting only the parcels that are in overlays
+    parcels_just_overlays <- parcels_overlays[!is.na(parcels_overlays$overlay_id),]
+
+    # joining with district df to get overlay type and constraints
+    parcels_just_overlays <- parcels_just_overlays |>
+      dplyr::left_join(overlays_df, by = "overlay_id")
+
+
+    # Add a check overlay column before running through the different overlay scenarios
+    # some of the scenarios will change the value to FALSE
+    parcel_df$check_overlay <- TRUE
+
+    ## A set of if statements to decide what to do with each overlay type
+
+    # I'm thinking this will be the new way i deal with relax, replace, and restrict
+
+    if ("restrict" %in% parcels_just_overlays$overlay | "relax" %in% parcels_just_overlays$overlay | "replace" %in% parcels_just_overlays$overlay){
+      # filtering to just the parcels with restrict, relax, or replace overlays
+      parcels_rrr <- parcels_just_overlays[parcels_just_overlays$overlay %in% c("restrict","relax","replace"),]
+
+      # listing the parcel names with restrict, relax, or replace overlays
+      overlay_ids_rrr <- parcels_rrr$parcel_id
+
+      # here are names of the parcels with multiple restrict/relax, or replace overlays.
+      parcels_with_mult_overlays <- overlay_ids_rrr[duplicated(overlay_ids_rrr)] |> unique()
+
+      # here are names of the parcels with multiple restrict/relax, or replace overlays.
+      parcels_with_one_overlay <- overlay_ids_rrr[!overlay_ids_rrr %in% parcels_with_mult_overlays]
+
+      # here is a df with just the overlapping overlays and their overlay type
+      mult_ovly_df <- parcels_rrr |>
+        sf::st_drop_geometry() |>
+        dplyr::mutate(id = 1:nrow(parcels_rrr)) |>
+        dplyr::filter(parcel_id %in% parcels_with_mult_overlays) |>
+        dplyr::select(id, parcel_id, overlay)
+
+      # here is a df with just the parcels having one overlay and their overlay type
+      one_ovly_df <- parcels_rrr |>
+        sf::st_drop_geometry() |>
+        dplyr::mutate(id = 1:nrow(parcels_rrr)) |>
+        dplyr::filter(parcel_id %in% parcels_with_one_overlay) |>
+        dplyr::select(id, parcel_id, overlay)
+
+      # create an empty list to store new constraint dfs
+      all_ovrly_reqs_list <- list()
+      for (row_num in 1:nrow(parcels_rrr)){
+        par_id <- parcels_rrr$parcel_id[[row_num]]
+        par_data <- parcels_rrr[row_num,]
+        zone_data <- zoning_data_list[[par_data$muni_id]]
+        overlay_type <- par_data$overlay
+
+        # get the variables that are constrained by the overlay
+        # note: I combined the parcel and the district data earlier, so the same variable is put for two arguments.
+        overlay_vars <- zr_get_variables(bldg_data, par_data, par_data, zone_data)
+
+        # get the zoning requirements for the overlay district
+        overlay_reqs <- zr_get_zoning_req(par_data, vars = overlay_vars)
+
+        all_ovrly_reqs_list[[row_num]] <- overlay_reqs
+      }
+
+
+      # create empty list that will hold the updated zoning requirments to replace the base reqs
+      reqs_after_overlays <- list()
+
+      # loop through all the parcels that are covered by just one overlay
+      for (single_ovly_pcl in parcels_with_one_overlay){
+        # get the id of the overly and the overlay type
+        ovly_req_id <- one_ovly_df[one_ovly_df$parcel_id == single_ovly_pcl,"id"]
+        overlay_type <- one_ovly_df[one_ovly_df$parcel_id == single_ovly_pcl,"overlay"]
+        par_id <- one_ovly_df[one_ovly_df$parcel_id == single_ovly_pcl,"parcel_id"]
+
+        # get the base district zoning requirements, and then
+        # switch out the pertinent zoning reqs from overlay in the og zoning reqs
+        base_reqs <- zoning_req_list[[par_id]]
+
+        overlay_reqs <- all_ovrly_reqs_list[[ovly_req_id]]
+
+        # merge the zoning requirements using the zr_merge_overlay_reqs function
+        # and add to the reqs list.
+        # note that if reqs_after_overlays has fewer items than length(parcels_with_one_overlay)
+        # it means that parcel was already kicked out in PD district and it will work fine
+        reqs_after_overlays[[par_id]] <- zr_merge_overlay_reqs(base_reqs, overlay_reqs, overlay_type)
+      }
+
+      # loop through each parcel that has multiple overlays
+      for (pcl in parcels_with_mult_overlays){
+        # get a df with just the restrict overlays of this parcel
+        mult_restrict_df <- mult_ovly_df |>
+          dplyr::filter(parcel_id == pcl & overlay == "restrict")
+        restrict_ids <- mult_restrict_df$id
+
+        # get a df with just the relax overlays of this parcel
+        mult_relax_df <- mult_ovly_df |>
+          dplyr::filter(parcel_id == pcl & overlay == "relax")
+        relax_ids <- mult_relax_df$id
+
+        # get a df with just the replace overlays of this parcel
+        mult_replace_df <- mult_ovly_df |>
+          dplyr::filter(parcel_id == pcl & overlay == "replace")
+        replace_ids <- mult_replace_df$id
+
+        # combine the restricted overlay constraints
+        # because it is restrict: take the min of the maxs and the max of the mins
+        if (length(restrict_ids) > 0 & any(sapply(all_ovrly_reqs_list[restrict_ids], is.data.frame))){
+
+          valid_ids <- which(sapply(all_ovrly_reqs_list[restrict_ids], is.data.frame))
+
+          combined_restrict_df <- all_ovrly_reqs_list[valid_ids] |>
+            dplyr::bind_rows() |>
+            dplyr::group_by(constraint_name) |>
+            dplyr::summarize(min_value = ifelse(sum(!is.na(unlist(min_value))) > 0,
+                                                max(unlist(min_value), na.rm = TRUE),
+                                                NA),
+                             max_value = ifelse(sum(!is.na(unlist(max_value))) > 0,
+                                                min(unlist(max_value), na.rm = TRUE),
+                                                NA))
+
+          combined_restrict_df <- combined_restrict_df |>
+            dplyr::mutate(min_value = purrr::pmap(list(min_value),list),
+                          max_value = purrr::pmap(list(max_value),list))
+
+        } else{
+          combined_restrict_df <- NULL
+        }
+
+        # combine the relaxed overlay constraints
+        # because it is relax: take the max of the maxs and the min of the mins
+        if (length(relax_ids) > 0 & any(sapply(all_ovrly_reqs_list[relax_ids], is.data.frame))){
+
+          valid_ids <- which(sapply(all_ovrly_reqs_list[relax_ids], is.data.frame))
+
+          combined_relax_df <- all_ovrly_reqs_list[valid_ids] |>
+            dplyr::bind_rows() |>
+            dplyr::group_by(constraint_name) |>
+            dplyr::summarize(min_value = ifelse(sum(!is.na(unlist(min_value))) > 0,
+                                                min(unlist(min_value), na.rm = TRUE),
+                                                NA),
+                             max_value = ifelse(sum(!is.na(unlist(max_value))) > 0,
+                                                max(unlist(max_value), na.rm = TRUE),
+                                                NA))
+
+          combined_relax_df <- combined_relax_df |>
+            dplyr::mutate(min_value = purrr::pmap(list(min_value),list),
+                          max_value = purrr::pmap(list(max_value),list))
+        } else{
+          combined_relax_df <- NULL
+        }
+
+        # combine the replace overlay constraints
+        # because it is replace: this is a bit different
+        # it takes the lowest and the highest values and puts them both
+        # in the constraints since multiple replace overlays on the same
+        # constraint would be contradictory and produce an ambiguous value
+        if (length(replace_ids) > 0 & any(sapply(all_ovrly_reqs_list[replace_ids], is.data.frame))){
+
+          valid_ids <- which(sapply(all_ovrly_reqs_list[replace_ids], is.data.frame))
+
+          # stack the dfs on top of each other to get the unique constraint names
+          stacked_replace_df <- all_ovrly_reqs_list[valid_ids] |>
+            dplyr::bind_rows()
+
+          unique_constraints <- unique(stacked_replace_df$constraint_name)
+
+          min_value_list <- list()
+          max_value_list <- list()
+          for (replace_const in unique_constraints){
+            min_const_list <- c()
+            max_const_list <- c()
+            for (replace_id in replace_ids){
+              const_df <- all_ovrly_reqs_list[[replace_id]]
+              min_vals <- const_df[const_df$constraint_name == replace_const, "min_value"] |> unlist()
+              max_vals <- const_df[const_df$constraint_name == replace_const, "max_value"] |> unlist()
+              min_const_list <- c(min_const_list, min_vals)
+              max_const_list <- c(max_const_list, max_vals)
+            }
+
+            # looking at min values
+            if (sum(!is.na(min_const_list)) > 0){
+              # if at least one of the values is not NA
+              # then a value will be saved to the final df
+              if (min(min_const_list, na.rm = T) == max(min_const_list, na.rm = T)){
+                # if the max is equal ot the min, then just one value will be saved
+                min_value_list[[replace_const]] <- min(min_const_list, na.rm = T)
+              } else{
+                # if the there is more than one value
+                # the max and min will be saved
+                min_value_list[[replace_const]] <- c(min(min_const_list, na.rm = T),max(min_const_list, na.rm = T))
+              }
+            } else{
+              # if all values are NA
+              # NA will be the saved value
+              min_value_list[[replace_const]] <- NA
+            }
+
+            # looking at max values
+            if (sum(!is.na(max_const_list)) > 0){
+              # if at least one of the values is not NA
+              # then a value will be saved to the final df
+              if (min(max_const_list, na.rm = T) == max(max_const_list, na.rm = T)){
+                # if the max is equal ot the min, then just one value will be saved
+                max_value_list[[replace_const]] <- min(max_const_list, na.rm = T)
+              } else{
+                # if the there is more than one value
+                # the max and min will be saved
+                max_value_list[[replace_const]] <- c(min(max_const_list, na.rm = T),max(max_const_list, na.rm = T))
+              }
+            } else{
+              # if the there is more than one value
+              # the max and min will be saved
+              max_value_list[[replace_const]] <- NA
+            }
+
+          }
+
+          combined_replace_df <- data.frame(constraint_name = unique_constraints,
+                                            min_value = I(unname(min_value_list)),
+                                            max_value = I(unname(max_value_list)))
+        } else{
+          combined_replace_df <- NULL
+        }
+
+
+        # For testing purposes
+        # TODO: Delete this
+        # combined_restrict_df <- data.frame(constraint_name = c("name1", "name2"),
+        #                                   min_value = c(1,2),
+        #                                   max_value = c(10,20))
+        # combined_replace_df <- data.frame(constraint_name = c("name2", "name3"),
+        #                                   min_value = c(4,5),
+        #                                   max_value = c(50,60))
+
+        all_overlay_comb_reqs <- list(combined_restrict_df, combined_relax_df, combined_replace_df)
+
+        if (length(unlist(all_overlay_comb_reqs)) == 0){
+          # this means they are all NULL and must have been kicked out with PD zoning
+          final_updated_ovrly_reqs <- NULL
+        } else if (length(unlist(all_overlay_comb_reqs)) == 1){
+          # this means that all the overlapping overlays are of the same type and they've already been combined
+          ovrly_idx <- which(lengths(all_overlay_comb_reqs) > 0)
+          final_updated_ovrly_reqs <- all_overlay_comb_reqs[[ovrly_idx]]
+        } else if (length(unlist(all_overlay_comb_reqs)) > 1){
+          # this means that multiple types of overlays were overlapping
+          ovrly_idxs <- which(lengths(all_overlay_comb_reqs) > 0)
+
+          # stack the dfs on top of each othe rto get the unique constraint names
+          stacked_replace_df <- all_overlay_comb_reqs[ovrly_idxs] |>
+            dplyr::bind_rows()
+
+          unique_constraints <- unique(stacked_replace_df$constraint_name)
+
+          min_value_list <- list()
+          max_value_list <- list()
+          for (replace_const in unique_constraints){
+            min_const_list <- c()
+            max_const_list <- c()
+            for (pcl_id in ovrly_idxs){
+              const_df <- all_overlay_comb_reqs[[pcl_id]]
+              min_vals <- const_df[const_df$constraint_name == replace_const, "min_value"] |> unlist()
+              max_vals <- const_df[const_df$constraint_name == replace_const, "max_value"] |> unlist()
+              min_const_list <- c(min_const_list, min_vals)
+              max_const_list <- c(max_const_list, max_vals)
+            }
+
+            # looking at min values
+            if (sum(!is.na(min_const_list)) > 0){
+              # if at least one of the values is not NA
+              # then a value will be saved to the final df
+              if (min(min_const_list, na.rm = T) == max(min_const_list, na.rm = T)){
+                # if the max is equal ot the min, then just one value will be saved
+                min_value_list[[replace_const]] <- min(min_const_list, na.rm = T)
+              } else{
+                # if the there is more than one value
+                # the max and min will be saved
+                min_value_list[[replace_const]] <- c(min(min_const_list, na.rm = T),max(min_const_list, na.rm = T))
+              }
+            } else{
+              # if all values are NA
+              # NA will be the saved value
+              min_value_list[[replace_const]] <- NA
+            }
+
+            # looking at max values
+            if (sum(!is.na(max_const_list)) > 0){
+              # if at least one of the values is not NA
+              # then a value will be saved to the final df
+              if (min(max_const_list, na.rm = T) == max(max_const_list, na.rm = T)){
+                # if the max is equal ot the min, then just one value will be saved
+                max_value_list[[replace_const]] <- min(max_const_list, na.rm = T)
+              } else{
+                # if the there is more than one value
+                # the max and min will be saved
+                max_value_list[[replace_const]] <- c(min(max_const_list, na.rm = T),max(max_const_list, na.rm = T))
+              }
+            } else{
+              # if the there is more than one value
+              # the max and min will be saved
+              max_value_list[[replace_const]] <- NA
+            }
+
+          }
+
+          final_updated_ovrly_reqs <- data.frame(constraint_name = unique_constraints,
+                                                 min_value = I(unname(min_value_list)),
+                                                 max_value = I(unname(max_value_list)))
+        } else{
+          # I don't know how this would ever happen, but if it does, I want to know about it
+          warning("Something went wrong with combining the different overlay types")
+        }
+
+        # Add the updated reqs to the overlay req list of dfs
+        reqs_after_overlays[[pcl]] <- final_updated_ovrly_reqs
+
+      }
+
+
+
+      # # put the updated requirements back in the zoning_req_list
+      # zoning_req_list[[par_id]] <- base_reqs
+
+    }
+
+
+    # If parcel is in "no_residential_effect" overlay, then
+    # nothing has to happen and it will continue on like it isn't in an overlay
+
+    # Addressing the "demolition_only" overlays
+    if ("demolition_only" %in% parcels_just_overlays$overlay){
+      parcels_demolition_only <- parcels_just_overlays[parcels_just_overlays$overlay == "demolition_only",]
+
+
+      # check to see if the parcel is vacant
+      if (hasName(parcels_demolition_only, "vacant")) {
+
+        # If it exists, return a data frame with just occupied parcels
+        non_vacant_parcels_in_overlay <- parcels_demolition_only |>
+          dplyr::filter(vacant == "TRUE" | is.na(vacant))
+
+        # list the occupied parcels
+        # They'll be sent straight to the false data frame list
+        overlay_ids_demo_only <- non_vacant_parcels_in_overlay$parcel_id
+
+      } else {
+
+        # If it does NOT exist, assume all rows are not vacant and give a warning
+        num_parcels_in_overlay <- nrow(parcels_demolition_only)
+        warning(paste0("Due to lack of vacancy data, parcels were assumed to be occupied. Therefore, ",
+                       num_parcels_in_overlay,
+                       " parcels in the demolition only overlays may have inacurate results."))
+
+        # list the occupied parcels
+        # They'll be sent straight to the false data frame list
+        overlay_ids_demo_only <- parcels_demolition_only$parcel_id
+
+      }
+
+      # assign FALSE for the overlay_check for some of the parcels.
+      parcel_df <- parcel_df |>
+        dplyr::mutate(check_overlay = ifelse(parcel_id %in% overlay_ids_demo_only, FALSE, check_overlay),
+                      false_reasons = ifelse(parcel_id %in% overlay_ids_demo_only, ifelse(!is.na(false_reasons),paste(false_reasons, "overlay_demolition_only", sep = ", "),"overlay_demolition_only"), false_reasons))
+
+
+      # like before, we stop analyzing the false parcels to speed up runntime
+      if (detailed_check == FALSE){
+        false_parcels <- parcel_df[!is.na(parcel_df$false_reasons),]
+        parcel_df <- parcel_df[is.na(parcel_df$false_reasons),]
+        # Add the false_parcels to the false_df list
+        false_df[["overlay_demolition_only"]] <- false_parcels
+      }
+
+    }
+
+    # Addressing the "none-by-right" overlays
+    # These parcels will get assigned FALSE, and they can skip other checks (unless detialed_check is true, then I'll have to figure out what to do)
+    if ("none-by-right" %in% parcels_just_overlays$overlay){
+      parcels_none_by_right <- parcels_just_overlays[parcels_just_overlays$overlay == "none-by-right",]
+
+      overlay_ids_none_by_right <- parcels_none_by_right$parcel_id
+
+      parcel_df <- parcel_df |>
+        dplyr::mutate(check_overlay = ifelse(parcel_id %in% overlay_ids_none_by_right, FALSE, check_overlay),
+                      false_reasons = ifelse(parcel_id %in% overlay_ids_none_by_right, ifelse(!is.na(false_reasons),paste(false_reasons, "overlay_none_by_right", sep = ", "),"overlay_none_by_right"), false_reasons))
+
+      # like before, we stop analyzing the false parcels to speed up runntime
+      if (detailed_check == FALSE){
+        false_parcels <- parcel_df[!is.na(parcel_df$false_reasons),]
+        parcel_df <- parcel_df[is.na(parcel_df$false_reasons),]
+        # Add the false_parcels to the false_df list
+        false_df[["overlay_none_by_right"]] <- false_parcels
+      }
+
+    }
+
+  }
+
 
 
 
@@ -454,7 +860,6 @@ zr_run_zoning_checks <- function(bldg_file,
       # code to execute for errors
       paste(FALSE)
     })
-
 
     if (inherits(check_constraints_df, "data.frame")){
       # Pivot to one row
@@ -768,250 +1173,250 @@ zr_run_zoning_checks <- function(bldg_file,
 
 
   #### OVERLAY STUFF ####
-
-  parcels_overlays <- parcels_overlays |>
-    dplyr::filter(!is.na(overlay_id))
-
-  overlay_parcels <- unique(parcels_overlays$parcel_id)
-
-  parcels_overlays$overlay_type <- overlays$overlay[parcels_overlays$overlay_id]
-
-  overlay_types <- parcels_overlays |>
-    dplyr::select(parcel_id, overlay_type) |>
-    sf::st_drop_geometry()
-
-  overlay_df <- final_df |>
-    # just select relevent columns
-    dplyr::select(parcel_id, false_reasons, allowed) |>
-    # filter out the ones that are already FALSE because they are in PD districts
-    dplyr::filter(grepl("PD_dist",false_reasons) == FALSE) |>
-    dplyr::filter(grepl("PD_overlay",false_reasons) == FALSE) |>
-    # add a column to label the ones that are covered by an overlay
-    dplyr::mutate(has_overlay = parcel_id %in% overlay_parcels) |>
-    # join overlay_types df to list the type of overlay stated in the OZFS
-    dplyr::left_join(overlay_types, by = dplyr::join_by(parcel_id)) |>
-    # do some logic to see if the result changes based on overly type
-    dplyr::mutate(allowed_now = dplyr::case_when(
-      # if ambiguous
-      allowed == "MAYBE" ~ "MAYBE",
-      # if building meets base requirements
-      allowed == "TRUE" & is.na(overlay_type) ~ "TRUE",
-      allowed == "TRUE" & overlay_type == "no-residential-effect" ~ "TRUE",
-      allowed == "TRUE" & overlay_type == "replace" ~ "MAYBE",
-      allowed == "TRUE" & overlay_type == "relax" ~ "TRUE",
-      allowed == "TRUE" & overlay_type == "restrict" ~ "MAYBE",
-      allowed == "TRUE" & overlay_type == "demolition-only" ~ "TRUE",
-      # if building doesn't meet base requirements
-      allowed == "FALSE" & is.na(overlay_type) ~ "FALSE",
-      allowed == "FALSE" & overlay_type == "no-residential-effect" ~ "FALSE",
-      allowed == "FALSE" & overlay_type == "replace" ~ "MAYBE", # check fit on parcel
-      allowed == "FALSE" & overlay_type == "relax" ~ "MAYBE", # check fit on parcel
-      allowed == "FALSE" & overlay_type == "restrict" ~ "FALSE",
-      allowed == "FALSE" & overlay_type == "demolition-only" ~ "FALSE",
-      TRUE ~ "FALSE"
-    ))
-
-
-  # get the rows that changed from FALSE to MAYBE with overlays
-  # we will have to recheck to see if the building fits in the parcel without setbacks
-  overlay_maybes <- overlay_df|>
-
-    # group group duplicate parcels and their results
-    dplyr::group_by(parcel_id) |>
-    dplyr::summarise(allowed = allowed[[1]], comb_check = paste(allowed_now, collapse = " - ")) |>
-
-    # logic to decide what the overall result would be
-    dplyr::mutate(allowed_now = dplyr::case_when(
-      grepl("FALSE",comb_check) ~ "FALSE",
-      grepl("MAYBE",comb_check) ~ "MAYBE",
-      TRUE ~ "TRUE")) |>
-
-    dplyr::filter(allowed == FALSE & allowed_now == "MAYBE")
-
-  # check their footprint against whole parcel
-  if (nrow(overlay_maybes) > 0){
-    overlay_foot_start_time <- proc.time()[[3]]
-    error_parcels <- c()
-    for (z in 1:nrow(overlay_maybes)){
-      parcel_data <- overlay_maybes[z,]
-      parcel_name <- parcel_data$parcel_id
-      zoning_req <- zoning_req_list[[parcel_data$parcel_id]]
-      vars <- vars_list[[parcel_data$parcel_id]]
-
-      # if the footprint area is smaller than the parcel area,
-      # then run the check_fit function
-      if (vars$lot_cov_bldg <= 100){
-        parcel_sides <- tryCatch(
-          {
-            parcel_geo |>
-              dplyr::filter(parcel_id == parcel_data$parcel_id)
-          }, error = function(e) {
-            error <- "error"
-            class(error) <- "error"
-            return(error)
-          }
-        )
-
-        if (inherits(parcel_sides, "error")){
-          error_parcels <- c(error_parcels, parcel_name)
-        }
-
-        parcel_with_setbacks <- parcel_sides
-        parcel_with_setbacks$setback <- NA
-
-        buildable_area <- tryCatch(
-          {
-            zr_get_buildable_area(parcel_with_setbacks, crs)
-          }, error = function(e) {
-            error <- "error"
-            class(error) <- "error"
-            return(error)
-          }
-        )
-
-        if (inherits(buildable_area, "error")){
-          error_parcels <- c(error_parcels, parcel_name)
-        }
-
-        check <- tryCatch(
-          {
-            zr_check_fit(bldg_data, sf::st_make_valid(buildable_area[[1]]), crs = crs)
-          }, error = function(e) {
-            error <- "error"
-            class(error) <- "error"
-            return(error)
-          }
-        )
-
-        if (inherits(check, "error")){
-          error_parcels <- c(error_parcels, parcel_name)
-          check <- "MAYBE"
-        }
-
-      } else{
-        check <- FALSE
-      }
-
-      overlay_maybes[z, "bldg_fit"] <- as.character(check)
-
-    }
-
-    if (length(error_parcels) > 0){
-      warning(paste0("The following parcels were marked as MAYBE because they produced errors during zr_check_fit:\n", paste(unique(error_parcels),collapse = "\n")))
-    }
-
-    # print checkpoint info
-    if (print_checkpoints){
-      time_lapsed <- proc.time()[[3]] - overlay_foot_start_time
-      cat(ifelse(time_lapsed > 60,
-                 paste0("___bldg_fit_overlays___(",round(time_lapsed / 60,2), " min)\n"),
-                 paste0("___bldg_fit_overlays___(",round(time_lapsed,1), " sec)\n")))
-      cat(paste(
-        length(
-          which(
-            overlay_maybes[,"allowed_now"][[1]] %in% c(TRUE, 'MAYBE')
-            )
-          )
-        ,"parcels are TRUE or MAYBE\n\n"))
-    }
-
-  }
-
-  #### change results based on overlay status ####
-
-  # get a df of just the overlays
-  overlay_check_df <- overlay_df |>
-    sf::st_drop_geometry() |>
-    dplyr::filter(has_overlay == "TRUE") |>
-
-    # group group duplicate parcels and their results
-    dplyr::group_by(parcel_id) |>
-    dplyr::summarise(comb_check = paste(allowed_now, collapse = " - ")) |>
-
-    # logic to decide what the overall result would be
-    dplyr::mutate(overlay_check = dplyr::case_when(
-      grepl("FALSE",comb_check) ~ "FALSE",
-      grepl("MAYBE",comb_check) ~ "MAYBE",
-      TRUE ~ "TRUE")) |>
-
-    #select only necessary columns
-    dplyr::select("parcel_id", "overlay_check")
-
-  if (nrow(overlay_check_df) > 0){
-
-    # get a df of just the overlays that were retested for fit
-    if (nrow(overlay_maybes) > 0){
-      overlay_bldg_fit <- overlay_maybes |>
-        sf::st_drop_geometry() |>
-
-        # group group duplicate parcels and their results
-        dplyr::group_by(parcel_id) |>
-        dplyr::summarise(comb_check = paste(bldg_fit, collapse = " - ")) |>
-
-        # logic to decide what the overall result would be
-        dplyr::mutate(overlay_bldg_fit = dplyr::case_when(
-          grepl("FALSE",comb_check) ~ "FALSE",
-          grepl("MAYBE",comb_check) ~ "MAYBE",
-          TRUE ~ "TRUE")) |>
-
-        dplyr::select(parcel_id, overlay_bldg_fit)
-
-    } else{
-      overlay_bldg_fit <- data.frame(parcel_id = "id", overlay_bldg_fit = "maybe") |>
-        dplyr::filter(parcel_id < 0)
-    }
-
-    new_final_df <- final_df |>
-      # add the overlay_check column
-      dplyr::left_join(overlay_check_df,
-                       by = dplyr::join_by("parcel_id"),
-                       relationship = "many-to-one") |>
-      # add the overlay_bldg_fit column
-      dplyr::left_join(overlay_bldg_fit,
-                       by = dplyr::join_by("parcel_id"),
-                       relationship = "many-to-one") |>
-      # create an overlay column to give the results of the overlay check
-      dplyr::mutate(overlay = dplyr::case_when(
-        is.na(overlay_bldg_fit) ~ overlay_check,
-        overlay_bldg_fit == "FALSE" ~ "FALSE",
-        overlay_bldg_fit == "TRUE" ~ "MAYBE",
-        TRUE ~ "TRUE"
-      )) |>
-      # update the reason column in case there was an overlay that changed it
-      dplyr::mutate(reason = dplyr::case_when(
-        is.na(overlay_bldg_fit) ~ reason,
-        overlay_bldg_fit == "TRUE" ~ ifelse(is.na(reason), "bldg_fit_overlay", paste(reason, "bldg_fit_overlay", sep = ", ")),
-        overlay_bldg_fit == "FALSE" ~ ifelse(is.na(reason), "overlay", paste(reason, "overlay", sep = ", "))
-      )) |>
-      # update the false_reasons column in case there is an overlay reason to add
-      dplyr::mutate(false_reasons = dplyr::case_when(
-        is.na(overlay_bldg_fit) ~ false_reasons,
-        overlay_bldg_fit == "FALSE" ~ ifelse(is.na(false_reasons), "overlay", paste(false_reasons, "overlay", sep = ", ")),
-        TRUE ~ false_reasons
-      )) |>
-      # update the maybe_reasons column in case there is an overlay reason to add
-      dplyr::mutate(maybe_reasons = dplyr::case_when(
-        is.na(overlay_bldg_fit) ~ maybe_reasons,
-        overlay_bldg_fit == "TRUE" ~ ifelse(is.na(maybe_reasons), "bldg_fit_overlay", paste(maybe_reasons, "bldg_fit_overlay", sep = ", ")),
-        TRUE ~ maybe_reasons
-      )) |>
-      # mutate the allowed column to update the values that were changed by overlay info
-      dplyr::mutate(allowed = as.character(allowed)) |>
-      dplyr::mutate(allowed = dplyr::case_when(
-        is.na(overlay_bldg_fit) & is.na(overlay_check) ~ allowed,
-        is.na(overlay_bldg_fit) ~ overlay_check,
-        overlay_bldg_fit == "TRUE" ~ "MAYBE",
-        overlay_bldg_fit == "FALSE" ~ "FALSE",
-        TRUE ~ overlay_check
-      ))
-
-  } else{
-    new_final_df <- final_df
-  }
+  #
+  # parcels_overlays <- parcels_overlays |>
+  #   dplyr::filter(!is.na(overlay_id))
+  #
+  # overlay_parcels <- unique(parcels_overlays$parcel_id)
+  #
+  # parcels_overlays$overlay_type <- overlays$overlay[parcels_overlays$overlay_id]
+  #
+  # overlay_types <- parcels_overlays |>
+  #   dplyr::select(parcel_id, overlay_type) |>
+  #   sf::st_drop_geometry()
+  #
+  # overlay_df <- final_df |>
+  #   # just select relevent columns
+  #   dplyr::select(parcel_id, false_reasons, allowed) |>
+  #   # filter out the ones that are already FALSE because they are in PD districts
+  #   dplyr::filter(grepl("PD_dist",false_reasons) == FALSE) |>
+  #   dplyr::filter(grepl("PD_overlay",false_reasons) == FALSE) |>
+  #   # add a column to label the ones that are covered by an overlay
+  #   dplyr::mutate(has_overlay = parcel_id %in% overlay_parcels) |>
+  #   # join overlay_types df to list the type of overlay stated in the OZFS
+  #   dplyr::left_join(overlay_types, by = dplyr::join_by(parcel_id)) |>
+  #   # do some logic to see if the result changes based on overly type
+  #   dplyr::mutate(allowed_now = dplyr::case_when(
+  #     # if ambiguous
+  #     allowed == "MAYBE" ~ "MAYBE",
+  #     # if building meets base requirements
+  #     allowed == "TRUE" & is.na(overlay_type) ~ "TRUE",
+  #     allowed == "TRUE" & overlay_type == "no-residential-effect" ~ "TRUE",
+  #     allowed == "TRUE" & overlay_type == "replace" ~ "MAYBE",
+  #     allowed == "TRUE" & overlay_type == "relax" ~ "TRUE",
+  #     allowed == "TRUE" & overlay_type == "restrict" ~ "MAYBE",
+  #     allowed == "TRUE" & overlay_type == "demolition-only" ~ "TRUE",
+  #     # if building doesn't meet base requirements
+  #     allowed == "FALSE" & is.na(overlay_type) ~ "FALSE",
+  #     allowed == "FALSE" & overlay_type == "no-residential-effect" ~ "FALSE",
+  #     allowed == "FALSE" & overlay_type == "replace" ~ "MAYBE", # check fit on parcel
+  #     allowed == "FALSE" & overlay_type == "relax" ~ "MAYBE", # check fit on parcel
+  #     allowed == "FALSE" & overlay_type == "restrict" ~ "FALSE",
+  #     allowed == "FALSE" & overlay_type == "demolition-only" ~ "FALSE",
+  #     TRUE ~ "FALSE"
+  #   ))
+  #
+  #
+  # # get the rows that changed from FALSE to MAYBE with overlays
+  # # we will have to recheck to see if the building fits in the parcel without setbacks
+  # overlay_maybes <- overlay_df|>
+  #
+  #   # group group duplicate parcels and their results
+  #   dplyr::group_by(parcel_id) |>
+  #   dplyr::summarise(allowed = allowed[[1]], comb_check = paste(allowed_now, collapse = " - ")) |>
+  #
+  #   # logic to decide what the overall result would be
+  #   dplyr::mutate(allowed_now = dplyr::case_when(
+  #     grepl("FALSE",comb_check) ~ "FALSE",
+  #     grepl("MAYBE",comb_check) ~ "MAYBE",
+  #     TRUE ~ "TRUE")) |>
+  #
+  #   dplyr::filter(allowed == FALSE & allowed_now == "MAYBE")
+  #
+  # # check their footprint against whole parcel
+  # if (nrow(overlay_maybes) > 0){
+  #   overlay_foot_start_time <- proc.time()[[3]]
+  #   error_parcels <- c()
+  #   for (z in 1:nrow(overlay_maybes)){
+  #     parcel_data <- overlay_maybes[z,]
+  #     parcel_name <- parcel_data$parcel_id
+  #     zoning_req <- zoning_req_list[[parcel_data$parcel_id]]
+  #     vars <- vars_list[[parcel_data$parcel_id]]
+  #
+  #     # if the footprint area is smaller than the parcel area,
+  #     # then run the check_fit function
+  #     if (vars$lot_cov_bldg <= 100){
+  #       parcel_sides <- tryCatch(
+  #         {
+  #           parcel_geo |>
+  #             dplyr::filter(parcel_id == parcel_data$parcel_id)
+  #         }, error = function(e) {
+  #           error <- "error"
+  #           class(error) <- "error"
+  #           return(error)
+  #         }
+  #       )
+  #
+  #       if (inherits(parcel_sides, "error")){
+  #         error_parcels <- c(error_parcels, parcel_name)
+  #       }
+  #
+  #       parcel_with_setbacks <- parcel_sides
+  #       parcel_with_setbacks$setback <- NA
+  #
+  #       buildable_area <- tryCatch(
+  #         {
+  #           zr_get_buildable_area(parcel_with_setbacks, crs)
+  #         }, error = function(e) {
+  #           error <- "error"
+  #           class(error) <- "error"
+  #           return(error)
+  #         }
+  #       )
+  #
+  #       if (inherits(buildable_area, "error")){
+  #         error_parcels <- c(error_parcels, parcel_name)
+  #       }
+  #
+  #       check <- tryCatch(
+  #         {
+  #           zr_check_fit(bldg_data, sf::st_make_valid(buildable_area[[1]]), crs = crs)
+  #         }, error = function(e) {
+  #           error <- "error"
+  #           class(error) <- "error"
+  #           return(error)
+  #         }
+  #       )
+  #
+  #       if (inherits(check, "error")){
+  #         error_parcels <- c(error_parcels, parcel_name)
+  #         check <- "MAYBE"
+  #       }
+  #
+  #     } else{
+  #       check <- FALSE
+  #     }
+  #
+  #     overlay_maybes[z, "bldg_fit"] <- as.character(check)
+  #
+  #   }
+  #
+  #   if (length(error_parcels) > 0){
+  #     warning(paste0("The following parcels were marked as MAYBE because they produced errors during zr_check_fit:\n", paste(unique(error_parcels),collapse = "\n")))
+  #   }
+  #
+  #   # print checkpoint info
+  #   if (print_checkpoints){
+  #     time_lapsed <- proc.time()[[3]] - overlay_foot_start_time
+  #     cat(ifelse(time_lapsed > 60,
+  #                paste0("___bldg_fit_overlays___(",round(time_lapsed / 60,2), " min)\n"),
+  #                paste0("___bldg_fit_overlays___(",round(time_lapsed,1), " sec)\n")))
+  #     cat(paste(
+  #       length(
+  #         which(
+  #           overlay_maybes[,"allowed_now"][[1]] %in% c(TRUE, 'MAYBE')
+  #           )
+  #         )
+  #       ,"parcels are TRUE or MAYBE\n\n"))
+  #   }
+  #
+  # }
+  #
+  # #### change results based on overlay status ####
+  #
+  # # get a df of just the overlays
+  # overlay_check_df <- overlay_df |>
+  #   sf::st_drop_geometry() |>
+  #   dplyr::filter(has_overlay == "TRUE") |>
+  #
+  #   # group group duplicate parcels and their results
+  #   dplyr::group_by(parcel_id) |>
+  #   dplyr::summarise(comb_check = paste(allowed_now, collapse = " - ")) |>
+  #
+  #   # logic to decide what the overall result would be
+  #   dplyr::mutate(overlay_check = dplyr::case_when(
+  #     grepl("FALSE",comb_check) ~ "FALSE",
+  #     grepl("MAYBE",comb_check) ~ "MAYBE",
+  #     TRUE ~ "TRUE")) |>
+  #
+  #   #select only necessary columns
+  #   dplyr::select("parcel_id", "overlay_check")
+  #
+  # if (nrow(overlay_check_df) > 0){
+  #
+  #   # get a df of just the overlays that were retested for fit
+  #   if (nrow(overlay_maybes) > 0){
+  #     overlay_bldg_fit <- overlay_maybes |>
+  #       sf::st_drop_geometry() |>
+  #
+  #       # group group duplicate parcels and their results
+  #       dplyr::group_by(parcel_id) |>
+  #       dplyr::summarise(comb_check = paste(bldg_fit, collapse = " - ")) |>
+  #
+  #       # logic to decide what the overall result would be
+  #       dplyr::mutate(overlay_bldg_fit = dplyr::case_when(
+  #         grepl("FALSE",comb_check) ~ "FALSE",
+  #         grepl("MAYBE",comb_check) ~ "MAYBE",
+  #         TRUE ~ "TRUE")) |>
+  #
+  #       dplyr::select(parcel_id, overlay_bldg_fit)
+  #
+  #   } else{
+  #     overlay_bldg_fit <- data.frame(parcel_id = "id", overlay_bldg_fit = "maybe") |>
+  #       dplyr::filter(parcel_id < 0)
+  #   }
+  #
+  #   new_final_df <- final_df |>
+  #     # add the overlay_check column
+  #     dplyr::left_join(overlay_check_df,
+  #                      by = dplyr::join_by("parcel_id"),
+  #                      relationship = "many-to-one") |>
+  #     # add the overlay_bldg_fit column
+  #     dplyr::left_join(overlay_bldg_fit,
+  #                      by = dplyr::join_by("parcel_id"),
+  #                      relationship = "many-to-one") |>
+  #     # create an overlay column to give the results of the overlay check
+  #     dplyr::mutate(overlay = dplyr::case_when(
+  #       is.na(overlay_bldg_fit) ~ overlay_check,
+  #       overlay_bldg_fit == "FALSE" ~ "FALSE",
+  #       overlay_bldg_fit == "TRUE" ~ "MAYBE",
+  #       TRUE ~ "TRUE"
+  #     )) |>
+  #     # update the reason column in case there was an overlay that changed it
+  #     dplyr::mutate(reason = dplyr::case_when(
+  #       is.na(overlay_bldg_fit) ~ reason,
+  #       overlay_bldg_fit == "TRUE" ~ ifelse(is.na(reason), "bldg_fit_overlay", paste(reason, "bldg_fit_overlay", sep = ", ")),
+  #       overlay_bldg_fit == "FALSE" ~ ifelse(is.na(reason), "overlay", paste(reason, "overlay", sep = ", "))
+  #     )) |>
+  #     # update the false_reasons column in case there is an overlay reason to add
+  #     dplyr::mutate(false_reasons = dplyr::case_when(
+  #       is.na(overlay_bldg_fit) ~ false_reasons,
+  #       overlay_bldg_fit == "FALSE" ~ ifelse(is.na(false_reasons), "overlay", paste(false_reasons, "overlay", sep = ", ")),
+  #       TRUE ~ false_reasons
+  #     )) |>
+  #     # update the maybe_reasons column in case there is an overlay reason to add
+  #     dplyr::mutate(maybe_reasons = dplyr::case_when(
+  #       is.na(overlay_bldg_fit) ~ maybe_reasons,
+  #       overlay_bldg_fit == "TRUE" ~ ifelse(is.na(maybe_reasons), "bldg_fit_overlay", paste(maybe_reasons, "bldg_fit_overlay", sep = ", ")),
+  #       TRUE ~ maybe_reasons
+  #     )) |>
+  #     # mutate the allowed column to update the values that were changed by overlay info
+  #     dplyr::mutate(allowed = as.character(allowed)) |>
+  #     dplyr::mutate(allowed = dplyr::case_when(
+  #       is.na(overlay_bldg_fit) & is.na(overlay_check) ~ allowed,
+  #       is.na(overlay_bldg_fit) ~ overlay_check,
+  #       overlay_bldg_fit == "TRUE" ~ "MAYBE",
+  #       overlay_bldg_fit == "FALSE" ~ "FALSE",
+  #       TRUE ~ overlay_check
+  #     ))
+  #
+  # } else{
+  #   new_final_df <- final_df
+  # }
 
   # select only the columns needed depending on whether detailed check is TRUE or FALSE
   if (detailed_check == FALSE){
-    final_result <- new_final_df |>
+    final_result <- final_df |>
       dplyr::select(dplyr::any_of(c("parcel_id",
                                     "muni_name",
                                     "dist_abbr",
@@ -1019,7 +1424,7 @@ zr_run_zoning_checks <- function(bldg_file,
                                     "reason",
                                     "geometry")))
   } else{
-    final_result <- new_final_df |>
+    final_result <- final_df |>
       dplyr::select(!dplyr::any_of(c("maybe_reasons",
                                      "false_reasons",
                                      "lot_width",

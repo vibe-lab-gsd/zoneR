@@ -46,7 +46,13 @@ zr_get_parcel_dims <- function(parcels_file){
   parcels_dim <- parcels_sf |>
     dplyr::filter(side == "centroid") |>
     dplyr::mutate(lot_type = ifelse(parcel_id %in% corner_parcels$parcel_id, "corner", "regular")) |>
-    dplyr::select(parcel_id, lot_width, lot_depth, lot_area, lot_type)
+    dplyr::select(dplyr::any_of(c("parcel_id",
+                                  "lot_width",
+                                  "lot_depth",
+                                  "lot_area",
+                                  "lot_type",
+                                  "parcel_status",
+                                  "vacant")))
 
 
 

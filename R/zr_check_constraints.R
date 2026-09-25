@@ -81,7 +81,7 @@ zr_check_constraints <- function(vars,
     min_requirement <- min_req[[1]]
     max_requirement <- max_req[[1]]
     # this tests for the usual case when each min and max requirements have one value
-    if (length(min_requirement) & length(max_requirement) == 1){
+    if (length(min_requirement) == 1 & length(max_requirement) == 1){
       filtered_req[i,"allowed"] <- value >= min_requirement & value <= max_requirement
       next
     }
