@@ -54,6 +54,9 @@
 # parcel_files <- "../2026_Sep_updates/data/1pct_Dallas.parcel"
 # zoning_files <- "../2026_Sep_updates/data/Dallas.zoning"
 
+# parcel_files <- "../2026_Sep_updates/data/test_full_parcels/"
+# zoning_files <- "../2026_Sep_updates/data/test_zoning/"
+
 
 zr_run_zoning_checks <- function(bldg_file,
                                  parcel_files,
@@ -417,7 +420,7 @@ zr_run_zoning_checks <- function(bldg_file,
   # If overlay is one of the checks, then perform overlay check
   # This involves updating some base requirements or just not allowing the parcel
   # depending on the type of overlay(s) that cover the parcel
-  if ("overlay" %in% checks){
+  if ("overlay" %in% checks & nrow(overlays) > 0){
     # dropping geom and adding id col to join it to the overlay parcels df
     overlays_df <- sf::st_drop_geometry(overlays)
     overlays_df$overlay_id <- 1:nrow(overlays_df)
