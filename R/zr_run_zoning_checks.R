@@ -797,10 +797,10 @@ zr_run_zoning_checks <- function(bldg_file,
 
     }
 
-    # Addressing the "none-by-right" overlays
+    # Addressing the "none_by_right" overlays
     # These parcels will get assigned FALSE, and they can skip other checks (unless detialed_check is true, then I'll have to figure out what to do)
-    if ("none-by-right" %in% parcels_just_overlays$overlay){
-      parcels_none_by_right <- parcels_just_overlays[parcels_just_overlays$overlay == "none-by-right",]
+    if ("none_by_right" %in% parcels_just_overlays$overlay){
+      parcels_none_by_right <- parcels_just_overlays[parcels_just_overlays$overlay == "none_by_right",]
 
       overlay_ids_none_by_right <- parcels_none_by_right$parcel_id
 
