@@ -36,6 +36,8 @@
   : Get all OZFS variables in one table
 - [`zr_get_zoning_req()`](https://vibe-lab-gsd.github.io/zoneR/reference/zr_get_zoning_req.md)
   : List district zoning requirement values
+- [`zr_merge_overlay_reqs()`](https://vibe-lab-gsd.github.io/zoneR/reference/zr_merge_overlay_reqs.md)
+  : Merge an overlay and a base district's requirements
 - [`zr_ozfs_is_valid()`](https://vibe-lab-gsd.github.io/zoneR/reference/zr_ozfs_is_valid.md)
   : Is it formatted to OZFS standards?
 - [`zr_ozfs_validate()`](https://vibe-lab-gsd.github.io/zoneR/reference/zr_ozfs_validate.md)

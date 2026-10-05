@@ -48,7 +48,7 @@ zr_run_zoning_checks(
 
   A list of all the checks that should take place. The default is to
   check for every constraint possible in the OZFS. These constraints can
-  found in the package data `possible_checks`. Note, if a zoning file
+  be found in the package data `possible_checks`. Note, if a zoning file
   doesn't have zoning info for one of the constraints listed in the
   checks variable, then it is assumed that building characteristic is
   allowed.
@@ -91,7 +91,7 @@ just_check_height <- zr_run_zoning_checks(bldg_file = bldg_file,
                                           checks = "height")
 #> ___data_prep___(0.2 sec)
 #> 
-#> ___get_zoning_req___(2.5 sec)
+#> ___get_zoning_req___(2.6 sec)
 #> 
 #> ___initial_checks___(1.3 sec)
 #> 97 parcels are TRUE or MAYBE

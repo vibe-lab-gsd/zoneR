@@ -36,7 +36,7 @@ just_check_height <- zr_run_zoning_checks(bldg_file = bldg_file,
 #> 
 #> ___get_zoning_req___(2.6 sec)
 #> 
-#> ___initial_checks___(1.3 sec)
+#> ___initial_checks___(1.4 sec)
 #> 97 parcels are TRUE or MAYBE
 #> 
 #> _____summary_____
