@@ -31,7 +31,7 @@ subsequent checks are skipped as soon as one check reads FALSE}
 printed at certain points throughout the function.}
 
 \item{checks}{A list of all the checks that should take place. The default is
-to check for every constraint possible in the OZFS. These constraints can found
+to check for every constraint possible in the OZFS. These constraints can be found
 in the package data \code{possible_checks}. Note, if a zoning file doesn't have zoning
 info for one of the constraints listed in the checks variable, then it is
 assumed that building characteristic is allowed.}
@@ -71,4 +71,5 @@ just_check_height <- zr_run_zoning_checks(bldg_file = bldg_file,
                                           parcel_files = parcel_file,
                                           zoning_files = zoning_file,
                                           checks = "height")
+
 }
