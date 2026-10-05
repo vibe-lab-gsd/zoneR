@@ -39,5 +39,10 @@ if (getRversion() >= "2.15.1") {
                            "allowed_now",
                            "bldg_fit",
                            "has_overlay",
-                           "overlay_type"))
+                           "overlay_type",
+                           "min_value",
+                           "max_value",
+                           "vacant",
+                           "check_overlay",
+                           "min_value"))
 }

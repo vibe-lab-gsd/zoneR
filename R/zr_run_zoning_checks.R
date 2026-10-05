@@ -748,7 +748,7 @@ zr_run_zoning_checks <- function(bldg_file,
 
 
       # check to see if the parcel is vacant
-      if (hasName(parcels_demolition_only, "vacant")) {
+      if (utils::hasName(parcels_demolition_only, "vacant")) {
 
         # If it exists, return a data frame with just occupied parcels
         non_vacant_parcels_in_overlay <- parcels_demolition_only |>
@@ -1152,7 +1152,7 @@ zr_run_zoning_checks <- function(bldg_file,
     final_df <- dplyr::bind_rows(false_df)
   }
   final_without_geom <- sf::st_drop_geometry(final_df) |>
-    dplyr::select(!vacant)
+    dplyr::select(!dplyr::any_of("vacant"))
   final_df$has_false <- rowSums(final_without_geom == FALSE, na.rm = T)
   final_df$has_maybe <- rowSums(final_without_geom == "MAYBE", na.rm = T)
   # add the "allowed" and "reason" columns
