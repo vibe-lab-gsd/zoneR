@@ -48,16 +48,7 @@
 #'                                           parcel_files = parcel_file,
 #'                                           zoning_files = zoning_file,
 #'                                           checks = "height")
-
-
-# bldg_file <- "../2026_Sep_updates/data/2_unit.bldg"
-# parcel_files <- "../ozfs-standard/example-data/parcel/sampled-parcels/one_percent/1pct_Pantego.parcel"
-# zoning_files <- "../ozfs-standard/example-data/zoning/all/Pantego.zoning"
-
-# parcel_files <- "../2026_Sep_updates/data/test_full_parcels/"
-# zoning_files <- "../2026_Sep_updates/data/test_zoning/"
-
-
+#'
 zr_run_zoning_checks <- function(bldg_file,
                                  parcel_files,
                                  zoning_files,
@@ -1160,7 +1151,8 @@ zr_run_zoning_checks <- function(bldg_file,
   } else{
     final_df <- dplyr::bind_rows(false_df)
   }
-  final_without_geom <- sf::st_drop_geometry(final_df)
+  final_without_geom <- sf::st_drop_geometry(final_df) |>
+    dplyr::select(!vacant)
   final_df$has_false <- rowSums(final_without_geom == FALSE, na.rm = T)
   final_df$has_maybe <- rowSums(final_without_geom == "MAYBE", na.rm = T)
   # add the "allowed" and "reason" columns
