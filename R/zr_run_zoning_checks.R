@@ -51,8 +51,8 @@
 
 
 # bldg_file <- "../2026_Sep_updates/data/2_unit.bldg"
-# parcel_files <- "../2026_Sep_updates/data/1pct_Dallas.parcel"
-# zoning_files <- "../2026_Sep_updates/data/Dallas.zoning"
+# parcel_files <- "../ozfs-standard/example-data/parcel/sampled-parcels/one_percent/1pct_Pantego.parcel"
+# zoning_files <- "../ozfs-standard/example-data/zoning/all/Pantego.zoning"
 
 # parcel_files <- "../2026_Sep_updates/data/test_full_parcels/"
 # zoning_files <- "../2026_Sep_updates/data/test_zoning/"
